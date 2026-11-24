@@ -102,7 +102,7 @@ jobs:
           if-no-files-found: error
 
   build-firmware:
-    name: Build Firmware (${{ env.FIRMWARE_BOARD }})
+    name: Build Firmware (kzb_f407)
     runs-on: ubuntu-latest
 
     steps:
