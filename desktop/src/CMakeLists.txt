@@ -9,6 +9,7 @@ qt_add_qml_module(${APP_TARGET}
     VERSION 1.0
     QML_FILES
         Main.qml
+        FluentUIDeps.qml
 )
 
 set_target_properties(${APP_TARGET} PROPERTIES
@@ -20,16 +21,26 @@ set_target_properties(${APP_TARGET} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
+target_include_directories(${APP_TARGET}
+    PRIVATE
+        "${CMAKE_SOURCE_DIR}/third_party/FluentUI/src"
+)
+
 target_compile_definitions(${APP_TARGET}
     PRIVATE
         APP_NAME="${PROJECT_NAME}"
         APP_VERSION="${PROJECT_VERSION}"
+        FLUENTUI_BUILD_STATIC_LIB
 )
 
 target_link_libraries(${APP_TARGET}
     PRIVATE
         Qt6::Quick
         Qt6::QuickControls2
+        Qt6::Widgets
+        Qt6::PrintSupport
+        fluentui
+        fluentuiplugin
 )
 
 if(WIN32)

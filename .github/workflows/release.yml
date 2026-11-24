@@ -37,6 +37,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          submodules: recursive
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -46,6 +48,7 @@ jobs:
             ninja-build \
             patchelf \
             libgl1-mesa-dev \
+            libx11-dev \
             libxkbcommon-dev \
             libxcb-cursor0 \
             libvulkan-dev
@@ -62,6 +65,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
+          modules: 'qt5compat qtshadertools'
           cache: true
 
       - name: Cache Qt Installer Framework ${{ env.QTIFW_VERSION }}

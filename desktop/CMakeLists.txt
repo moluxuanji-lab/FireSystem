@@ -7,10 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 6.8 REQUIRED COMPONENTS 
     Quick
     QuickControls2
+    Widgets
+    PrintSupport
 )
 
 qt_standard_project_setup(REQUIRES 6.8)
 
+set(QT_VERSION ${Qt6_VERSION})
+set(FLUENTUI_BUILD_STATIC_LIB ON CACHE BOOL "Build FluentUI as static library" FORCE)
+set(FLUENTUI_BUILD_EXAMPLES OFF CACHE BOOL "Disable FluentUI examples" FORCE)
+add_subdirectory(third_party/FluentUI/src EXCLUDE_FROM_ALL)
 
 include(GNUInstallDirs)
 add_subdirectory(src)
