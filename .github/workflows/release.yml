@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 env:
-  QT_VERSION: '6.8.3'
+  QT_VERSION: '6.12.0'
   ZEPHYR_VERSION: 'v4.5.0'
   ZEPHYR_SDK_VERSION: '1.0.1'
   FIRMWARE_BOARD: 'kzb_f407'
