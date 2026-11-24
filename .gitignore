@@ -1,0 +1,16 @@
+# Build & package outputs (desktop + firmware)
+build/
+builds/
+dist/
+packages/
+
+# Qt / QML local build metadata
+.qmlls.ini
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+*.code-workspace

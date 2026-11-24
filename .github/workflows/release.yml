@@ -1,0 +1,224 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  QT_VERSION: '6.8.3'
+  ZEPHYR_VERSION: 'v4.5.0'
+  ZEPHYR_SDK_VERSION: '1.0.1'
+  FIRMWARE_BOARD: 'kzb_f407'
+
+jobs:
+  build-desktop:
+    name: Build Desktop (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+          - name: linux-x64
+            os: ubuntu-latest
+          - name: macos-arm64
+            os: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build \
+            patchelf \
+            libgl1-mesa-dev \
+            libxkbcommon-dev \
+            libxcb-cursor0 \
+            libvulkan-dev
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Setup MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt ${{ env.QT_VERSION }} & Qt Installer Framework
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          tools: 'tools_ifw'
+          cache: true
+
+      - name: Configure CMake (Release)
+        shell: bash
+        run: |
+          IFW_BIN=$(command -v binarycreator || true)
+          IFW_ARG=()
+          if [ -n "$IFW_BIN" ]; then
+            IFW_ROOT=$(dirname "$(dirname "$IFW_BIN")")
+            if command -v cygpath >/dev/null 2>&1; then
+              IFW_ROOT=$(cygpath -m "$IFW_ROOT")
+            fi
+            IFW_ARG=("-DCPACK_IFW_ROOT=$IFW_ROOT")
+            echo "Detected CPACK_IFW_ROOT=$IFW_ROOT"
+          fi
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            "${IFW_ARG[@]}"
+
+      - name: Build Release
+        run: cmake --build build --config Release --parallel
+
+      - name: Package with CPack (Portable + IFW Installer)
+        run: cpack --config build/CPackConfig.cmake -V
+
+      - name: Prepare distributable files
+        shell: bash
+        run: |
+          rm -rf packages/_CPack_Packages
+          ls -lh packages/
+
+      - name: Upload ${{ matrix.name }} packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: FireSystem-${{ matrix.name }}
+          path: desktop/packages/*
+          if-no-files-found: error
+
+  build-firmware:
+    name: Build Firmware (${{ env.FIRMWARE_BOARD }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Zephyr host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            gperf \
+            ccache \
+            device-tree-compiler \
+            python3-venv \
+            wget \
+            xz-utils
+
+      - name: Cache Zephyr workspace (${{ env.ZEPHYR_VERSION }})
+        id: cache-zephyr-ws
+        uses: actions/cache@v4
+        with:
+          path: /tmp/zephyr-ws
+          key: zephyr-ws-${{ env.ZEPHYR_VERSION }}-stm32-v1
+
+      - name: Cache Zephyr SDK (${{ env.ZEPHYR_SDK_VERSION }})
+        id: cache-zephyr-sdk
+        uses: actions/cache@v4
+        with:
+          path: /tmp/zephyr-sdk
+          key: zephyr-sdk-${{ env.ZEPHYR_SDK_VERSION }}-arm-v1
+
+      - name: Setup Python venv and West
+        run: |
+          python3 -m venv /tmp/zephyr-venv
+          echo "/tmp/zephyr-venv/bin" >> "$GITHUB_PATH"
+          /tmp/zephyr-venv/bin/pip install --upgrade pip west
+
+      - name: Initialize Zephyr ${{ env.ZEPHYR_VERSION }} workspace
+        if: steps.cache-zephyr-ws.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/zephyr-ws
+          west init -m https://github.com/zephyrproject-rtos/zephyr --mr "${{ env.ZEPHYR_VERSION }}" /tmp/zephyr-ws
+          cd /tmp/zephyr-ws
+          west update --narrow --fetch-opt=--depth=1 hal_stm32 cmsis_6 cmsis picolibc
+
+      - name: Install Zephyr Python requirements
+        run: |
+          pip install -r /tmp/zephyr-ws/zephyr/scripts/requirements-base.txt
+
+      - name: Install Zephyr SDK ${{ env.ZEPHYR_SDK_VERSION }} (arm-zephyr-eabi)
+        if: steps.cache-zephyr-sdk.outputs.cache-hit != 'true'
+        run: |
+          cd /tmp/zephyr-ws
+          west sdk install \
+            --version "${{ env.ZEPHYR_SDK_VERSION }}" \
+            -d /tmp/zephyr-sdk \
+            -t arm-zephyr-eabi \
+            --no-hosttools \
+            --personal-access-token "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Build firmware app and boot
+        env:
+          ZEPHYR_BASE: /tmp/zephyr-ws/zephyr
+          ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+          ZEPHYR_SDK_INSTALL_DIR: /tmp/zephyr-sdk
+        run: |
+          cd /tmp/zephyr-ws
+          west build -p always -b "${{ env.FIRMWARE_BOARD }}" -d /tmp/build-app \
+            "${{ github.workspace }}/firmware/app" -- \
+            -DBOARD_ROOT="${{ github.workspace }}/firmware"
+
+          west build -p always -b "${{ env.FIRMWARE_BOARD }}" -d /tmp/build-boot \
+            "${{ github.workspace }}/firmware/boot" -- \
+            -DBOARD_ROOT="${{ github.workspace }}/firmware"
+
+      - name: Collect firmware artifacts
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            PKG_VER="${GITHUB_REF_NAME#v}"
+          else
+            PKG_VER=$(grep -oP 'project\(FireSystem\s+VERSION\s+\K[0-9.]+' desktop/CMakeLists.txt || echo "0.1.0")
+          fi
+          mkdir -p firmware-dist
+          cp /tmp/build-app/zephyr/zephyr.bin  "firmware-dist/FireSystem-app-${PKG_VER}-${{ env.FIRMWARE_BOARD }}.bin"
+          cp /tmp/build-app/zephyr/zephyr.hex  "firmware-dist/FireSystem-app-${PKG_VER}-${{ env.FIRMWARE_BOARD }}.hex"
+          cp /tmp/build-boot/zephyr/zephyr.bin "firmware-dist/FireSystem-boot-${PKG_VER}-${{ env.FIRMWARE_BOARD }}.bin"
+          cp /tmp/build-boot/zephyr/zephyr.hex "firmware-dist/FireSystem-boot-${PKG_VER}-${{ env.FIRMWARE_BOARD }}.hex"
+          ls -lh firmware-dist/
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FireSystem-firmware-${{ env.FIRMWARE_BOARD }}
+          path: firmware-dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: [build-desktop, build-firmware]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-artifacts
+          merge-multiple: true
+
+      - name: List release assets
+        run: ls -lh dist-artifacts/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist-artifacts/*

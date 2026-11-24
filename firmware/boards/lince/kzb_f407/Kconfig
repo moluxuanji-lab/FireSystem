@@ -1,0 +1,4 @@
+config KZB_EARLY_SAFE_IO
+	bool "Clamp KZB safety relay outputs and RS485 DE low before kernel init"
+	default y
+	depends on BOARD_KZB_F407

@@ -1,0 +1,34 @@
+function Component()
+{
+}
+
+Component.prototype.createOperations = function()
+{
+    component.createOperations();
+
+    if (systemInfo.kernelType === "winnt") {
+        component.addOperation(
+            "CreateShortcut",
+            "@TargetDir@/__PROJECT_NAME__.exe",
+            "@StartMenuDir@/__PROJECT_NAME__.lnk",
+            "workingDirectory=@TargetDir@"
+        );
+        component.addOperation(
+            "CreateShortcut",
+            "@TargetDir@/__PROJECT_NAME__.exe",
+            "@DesktopDir@/__PROJECT_NAME__.lnk",
+            "workingDirectory=@TargetDir@"
+        );
+    } else if (systemInfo.kernelType === "linux") {
+        component.addOperation(
+            "CreateDesktopEntry",
+            "__PROJECT_NAME__.desktop",
+            "Type=Application\n" +
+            "Name=__PROJECT_NAME__\n" +
+            "Exec=\"@TargetDir@/__INSTALL_BINDIR__/__PROJECT_NAME__\"\n" +
+            "Terminal=false\n" +
+            "Categories=Utility;"
+        );
+    }
+    // macOS: .app bundle installed into @ApplicationsDir@ is registered automatically.
+}

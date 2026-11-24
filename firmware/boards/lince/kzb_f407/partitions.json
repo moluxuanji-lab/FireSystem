@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "kzb.partitions.v1",
+  "freezeStatus": "frozen-p09",
+  "board": "kzb_f407",
+  "hwRev": "v1.1",
+  "mcu": "STM32F407ZET6",
+  "mcuboot": {
+    "swapMode": "swap-scratch",
+    "headerSize": 1024,
+    "align": 1,
+    "maxSectors": 96,
+    "trailerReserveBytes": 4096,
+    "maxSignedImageBytes": 389120,
+    "signatureType": "ecdsa-p256",
+    "downgradePrevention": "security-counter",
+    "uuidVidNamespace": "lince.firesystem",
+    "uuidCidName": "kzb_f407_v1.1"
+  },
+  "devices": {
+    "flash0": {
+      "dtNode": "flash0",
+      "baseAddr": "0x08000000",
+      "sizeBytes": 524288,
+      "eraseSectorsBytes": [16384, 16384, 16384, 16384, 65536, 131072, 131072, 131072],
+      "partitions": [
+        {
+          "node": "boot_partition",
+          "label": "mcuboot",
+          "offset": 0,
+          "offsetHex": "0x00000000",
+          "size": 131072,
+          "sizeHex": "0x00020000",
+          "sectors": [0, 1, 2, 3, 4],
+          "role": "bootloader",
+          "purpose": "Canonical MCUboot bootloader (USB rescue / UART / downgrade / VID+CID)"
+        },
+        {
+          "node": "slot0_partition",
+          "label": "image-0",
+          "offset": 131072,
+          "offsetHex": "0x00020000",
+          "size": 393216,
+          "sizeHex": "0x00060000",
+          "sectors": [5, 6, 7],
+          "role": "primary-slot",
+          "purpose": "Primary executable image slot (max 389,120 B + 4,096 B trailer guard)"
+        }
+      ]
+    },
+    "nor_flash": {
+      "dtNode": "nor_flash",
+      "jedecId": ["0xef", "0x40", "0x21"],
+      "sizeBytes": 134217728,
+      "eraseSectorBytes": 4096,
+      "addressingBytes": 4,
+      "partitions": [
+        {
+          "node": "nor_reserved_guard",
+          "label": "nor-guard",
+          "offset": 0,
+          "offsetHex": "0x00000000",
+          "size": 1048576,
+          "sizeHex": "0x00100000",
+          "role": "guard",
+          "purpose": "Reserved factory/probe protection window [0, 1 MiB)"
+        },
+        {
+          "node": "slot1_partition",
+          "label": "image-1",
+          "offset": 1048576,
+          "offsetHex": "0x00100000",
+          "size": 393216,
+          "sizeHex": "0x00060000",
+          "role": "secondary-slot",
+          "purpose": "MCUboot candidate upgrade slot (96 x 4 KiB sectors)"
+        },
+        {
+          "node": "scratch_partition",
+          "label": "image-scratch",
+          "offset": 1441792,
+          "offsetHex": "0x00160000",
+          "size": 131072,
+          "sizeHex": "0x00020000",
+          "role": "swap-scratch",
+          "purpose": "MCUboot swap-scratch area (>= max 128 KiB internal Flash sector)"
+        },
+        {
+          "node": "identity_partition",
+          "label": "identity",
+          "offset": 1572864,
+          "offsetHex": "0x00180000",
+          "size": 65536,
+          "sizeHex": "0x00010000",
+          "role": "identity",
+          "purpose": "Board identity and trust anchors (P10)"
+        },
+        {
+          "node": "config_a_partition",
+          "label": "config-a",
+          "offset": 1638400,
+          "offsetHex": "0x00190000",
+          "size": 131072,
+          "sizeHex": "0x00020000",
+          "role": "config-a",
+          "purpose": "Transactional configuration bank A (P10)"
+        },
+        {
+          "node": "config_b_partition",
+          "label": "config-b",
+          "offset": 1769472,
+          "offsetHex": "0x001B0000",
+          "size": 131072,
+          "sizeHex": "0x00020000",
+          "role": "config-b",
+          "purpose": "Transactional configuration bank B (P10)"
+        },
+        {
+          "node": "action_journal_partition",
+          "label": "action-journal",
+          "offset": 1900544,
+          "offsetHex": "0x001D0000",
+          "size": 131072,
+          "sizeHex": "0x00020000",
+          "role": "journal",
+          "purpose": "Power-fail safe action/cylinder state journal (P10/P11)"
+        },
+        {
+          "node": "diag_log_partition",
+          "label": "diag-log",
+          "offset": 2097152,
+          "offsetHex": "0x00200000",
+          "size": 14614528,
+          "sizeHex": "0x00DF0000",
+          "role": "diag-log",
+          "purpose": "Rotating diagnostic and audit log storage"
+        },
+        {
+          "node": "nor_boundary_test_partition",
+          "label": "nor-boundary",
+          "offset": 16773120,
+          "offsetHex": "0x00FFF000",
+          "size": 8192,
+          "sizeHex": "0x00002000",
+          "role": "boundary-test",
+          "purpose": "Straddles 16 MiB (0x01000000) 4-byte addressing boundary"
+        }
+      ]
+    }
+  }
+}

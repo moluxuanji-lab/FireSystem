@@ -1,0 +1,240 @@
+/dts-v1/;
+#include <st/f4/stm32f407Xe.dtsi>
+#include <st/f4/stm32f407z(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Lince KZB-V1.1 STM32F407ZE Controller";
+	compatible = "lince,kzb-f407";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,dtcm = &ccm0;
+	};
+
+	aliases {
+		watchdog0 = &iwdg;
+	};
+
+	zephyr,user {
+		dr1-gpios = <&gpioe 5 GPIO_ACTIVE_HIGH>;
+		dr2-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+		cn4-4-gpios = <&gpiof 6 GPIO_ACTIVE_LOW>;
+		cn4-6-gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+		cn5-4-gpios = <&gpiof 7 GPIO_ACTIVE_LOW>;
+		cn5-6-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		button-gpios = <&gpiof 10 GPIO_ACTIVE_LOW>;
+		rs485-a-de-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+		rs485-b-de-gpios = <&gpiof 11 GPIO_ACTIVE_HIGH>;
+		led-tx-gpios = <&gpiog 8 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	hse-bypass;
+	status = "okay";
+};
+
+&clk_lse {
+	/* Bounded timeout probe in bsp_clock_sram.c enables LSEBYP and prevents boot hang if U21 faults. */
+	status = "disabled";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <168>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+/* D43: External U22 RTC is unused and battery-free; I2C3 stays permanently disabled. */
+&i2c3 {
+	status = "disabled";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00020000>;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x00060000>;
+		};
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
+	pinctrl-names = "default";
+	current-speed = <19200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <19200>;
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
+	pinctrl-names = "default";
+	bitrate = <500000>;
+	sample-point = <875>;
+	status = "okay";
+};
+
+&can2 {
+	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb6>;
+	pinctrl-names = "default";
+	bitrate = <500000>;
+	sample-point = <875>;
+	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	phy-connection-type = "rmii";
+	phy-handle = <&lan8720a_phy>;
+	pinctrl-0 = <&eth_ref_clk_pa1 &eth_crs_dv_pa7 &eth_rxd0_pc4
+		     &eth_rxd1_pc5 &eth_tx_en_pg11 &eth_txd0_pg13 &eth_txd1_pg14>;
+	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	lan8720a_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+
+	w5500_eth: ethernet@0 {
+		compatible = "wiznet,w5500";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		zephyr,random-mac-address;
+		reset-gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+		int-gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	nor_flash: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		jedec-id = [ef 40 21];
+		size = <0x40000000>;
+		use-4b-addr-opcodes;
+		spi-max-frequency = <1000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* First 1 MiB preserved untouched for factory/probe protection. */
+			nor_reserved_guard: partition@0 {
+				label = "nor-guard";
+				reg = <0x00000000 0x00100000>;
+			};
+
+			slot1_partition: partition@100000 {
+				label = "image-1";
+				reg = <0x00100000 0x00060000>;
+			};
+
+			scratch_partition: partition@160000 {
+				label = "image-scratch";
+				reg = <0x00160000 0x00020000>;
+			};
+
+			identity_partition: partition@180000 {
+				label = "identity";
+				reg = <0x00180000 0x00010000>;
+			};
+
+			config_a_partition: partition@190000 {
+				label = "config-a";
+				reg = <0x00190000 0x00020000>;
+			};
+
+			config_b_partition: partition@1B0000 {
+				label = "config-b";
+				reg = <0x001B0000 0x00020000>;
+			};
+
+			action_journal_partition: partition@1D0000 {
+				label = "action-journal";
+				reg = <0x001D0000 0x00020000>;
+			};
+
+			diag_log_partition: partition@200000 {
+				label = "diag-log";
+				reg = <0x00200000 0x00DF0000>;
+			};
+
+			nor_boundary_test_partition: partition@FFF000 {
+				label = "nor-boundary";
+				reg = <0x00FFF000 0x00002000>;
+			};
+		};
+	};
+};
+
+&usbotg_fs {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+};
+
+&rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
