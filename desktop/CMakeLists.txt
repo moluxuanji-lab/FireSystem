@@ -24,7 +24,11 @@ set(CPACK_PACKAGE_DIRECTORY "${CMAKE_SOURCE_DIR}/packages")
 
 if(WIN32)
     set(CPACK_GENERATOR "ZIP;IFW")
-    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-win64")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64")
+        set(_pkg_platform "windows-arm64")
+    else()
+        set(_pkg_platform "windows-x64")
+    endif()
     set(_ifw_search_globs
         "C:/Qt/Tools/QtInstallerFramework/*"
         "$ENV{HOMEDRIVE}/Qt/Tools/QtInstallerFramework/*"
@@ -35,11 +39,10 @@ if(WIN32)
 elseif(APPLE)
     set(CPACK_GENERATOR "ZIP;IFW")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
-        set(_pkg_arch "arm64")
+        set(_pkg_platform "macos-arm64")
     else()
-        set(_pkg_arch "x64")
+        set(_pkg_platform "macos-x64")
     endif()
-    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-macos-${_pkg_arch}")
     set(_ifw_search_globs
         "$ENV{HOME}/Qt/Tools/QtInstallerFramework/*"
         "/opt/Qt/Tools/QtInstallerFramework/*"
@@ -50,11 +53,10 @@ elseif(APPLE)
 else()
     set(CPACK_GENERATOR "TGZ;IFW")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
-        set(_pkg_arch "arm64")
+        set(_pkg_platform "linux-arm64")
     else()
-        set(_pkg_arch "x64")
+        set(_pkg_platform "linux-x64")
     endif()
-    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-linux-${_pkg_arch}")
     set(_ifw_search_globs
         "$ENV{HOME}/Qt/Tools/QtInstallerFramework/*"
         "/opt/Qt/Tools/QtInstallerFramework/*"
@@ -64,6 +66,13 @@ else()
     set(CPACK_IFW_PACKAGE_RUN_PROGRAM "@TargetDir@/${CMAKE_INSTALL_BINDIR}/${PROJECT_NAME}")
     set(_ifw_install_bindir "${CMAKE_INSTALL_BINDIR}")
 endif()
+
+configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/CPackOptions.cmake.in"
+    "${CMAKE_BINARY_DIR}/CPackOptions.cmake"
+    @ONLY
+)
+set(CPACK_PROJECT_CONFIG_FILE "${CMAKE_BINARY_DIR}/CPackOptions.cmake")
 
 if(MSVC)
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
@@ -110,5 +119,7 @@ cpack_add_component(App
 )
 cpack_ifw_configure_component(App
     FORCED_INSTALLATION
+    DISPLAY_NAME "${PROJECT_NAME}" zh_CN "${PROJECT_NAME}"
+    DESCRIPTION "${PROJECT_NAME} Desktop Application" zh_CN "${PROJECT_NAME} 桌面客户端"
     SCRIPT "${CMAKE_BINARY_DIR}/installer/installscript.qs"
 )

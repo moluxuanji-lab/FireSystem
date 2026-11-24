@@ -1,0 +1,11 @@
+set(_pkg_base "@CPACK_PACKAGE_NAME@-@CPACK_PACKAGE_VERSION@-@_pkg_platform@")
+
+if(CPACK_GENERATOR STREQUAL "IFW")
+    if("@CMAKE_SYSTEM_NAME@" STREQUAL "Windows")
+        set(CPACK_PACKAGE_FILE_NAME "${_pkg_base}-setup")
+    else()
+        set(CPACK_PACKAGE_FILE_NAME "${_pkg_base}-installer")
+    endif()
+elseif(CPACK_GENERATOR STREQUAL "ZIP" OR CPACK_GENERATOR STREQUAL "TGZ")
+    set(CPACK_PACKAGE_FILE_NAME "${_pkg_base}-portable")
+endif()
