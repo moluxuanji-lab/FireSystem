@@ -5,6 +5,7 @@ project(FireSystem VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS 
+    Network
     Quick
     QuickControls2
     Widgets
@@ -28,7 +29,12 @@ if(TARGET fluentui)
 endif()
 
 include(GNUInstallDirs)
+include(CTest)
 add_subdirectory(src)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "${PROJECT_NAME}")

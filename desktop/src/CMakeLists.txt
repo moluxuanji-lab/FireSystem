@@ -1,15 +1,76 @@
+set(CORE_TARGET ${PROJECT_NAME}Core)
+set(UI_TARGET ${PROJECT_NAME}UI)
 set(APP_TARGET ${PROJECT_NAME}App)
 
-qt_add_executable(${APP_TARGET}
-    main.cpp
+qt_add_library(${CORE_TARGET} STATIC
+    core/I18nCatalog.h
+    core/I18nCatalog.cpp
+    core/AccountManager.h
+    core/AccountManager.cpp
+    core/OfflineFileManager.h
+    core/OfflineFileManager.cpp
+    core/PreferencesManager.h
+    core/PreferencesManager.cpp
+    core/TemplateReviewManager.h
+    core/TemplateReviewManager.cpp
+    core/SettingsService.h
+    core/SettingsService.cpp
 )
 
-qt_add_qml_module(${APP_TARGET}
+target_include_directories(${CORE_TARGET}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+target_link_libraries(${CORE_TARGET}
+    PUBLIC
+        Qt6::Core
+        Qt6::Network
+)
+
+set(QML_IMPORT_PATH
+    "${CMAKE_BINARY_DIR}/qml"
+    "${CMAKE_BINARY_DIR}/third_party/FluentUI/src"
+    CACHE STRING "QML import paths" FORCE
+)
+
+qt_add_library(${UI_TARGET} STATIC)
+
+qt_add_qml_module(${UI_TARGET}
     URI FireSystem.UI
     VERSION 1.0
+    RESOURCE_PREFIX /qt/qml
+    OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml/FireSystem/UI"
+    IMPORTS
+        FluentUI
     QML_FILES
         Main.qml
         FluentUIDeps.qml
+        qml/components/SectionCard.qml
+        qml/components/KeyValueList.qml
+        qml/components/NoticeBanner.qml
+        qml/components/StatusChip.qml
+        qml/components/PageHeader.qml
+        qml/pages/LoginPage.qml
+        qml/pages/SettingsPage.qml
+        qml/pages/SettingsAccountsPage.qml
+        qml/pages/SettingsLicensePage.qml
+        qml/pages/SettingsTemplatesPage.qml
+        qml/pages/SettingsGeneralPage.qml
+        qml/pages/SettingsAboutPage.qml
+)
+
+target_link_libraries(${UI_TARGET}
+    PUBLIC
+        ${CORE_TARGET}
+        Qt6::Quick
+        Qt6::QuickControls2
+        fluentui
+        fluentuiplugin
+)
+
+qt_add_executable(${APP_TARGET}
+    main.cpp
 )
 
 set_target_properties(${APP_TARGET} PROPERTIES
@@ -35,6 +96,9 @@ target_compile_definitions(${APP_TARGET}
 
 target_link_libraries(${APP_TARGET}
     PRIVATE
+        ${CORE_TARGET}
+        ${UI_TARGET}
+        ${UI_TARGET}plugin
         Qt6::Quick
         Qt6::QuickControls2
         Qt6::Widgets

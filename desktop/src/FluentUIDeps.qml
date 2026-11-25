@@ -5,6 +5,7 @@ import QtQml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Basic
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtQuick.Shapes
 import QtQuick.Templates
