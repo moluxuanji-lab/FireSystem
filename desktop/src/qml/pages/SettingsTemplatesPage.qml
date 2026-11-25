@@ -2,14 +2,12 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import FluentUI
 import "../components"
 
-FluScrollablePage {
+WorkbenchPage {
     id: page
 
     property var service: null
-    property var hostWindow: null
 
     readonly property var i18n: service ? service.i18n : null
 
@@ -17,12 +15,6 @@ FluScrollablePage {
         if (!i18n) return key
         return i18n.t(key, i18n.revision)
     }
-
-    spacing: 16
-    leftPadding: 28
-    rightPadding: 28
-    topPadding: 22
-    bottomPadding: 28
 
     FileDialog {
         id: exportManifestDialog
@@ -44,20 +36,17 @@ FluScrollablePage {
 
     SectionCard {
         Layout.fillWidth: true
-        Layout.maximumWidth: 920
 
         KeyValueList {
             Layout.fillWidth: true
             items: [
                 {
                     label: page.t("当前模板"),
-                    value: page.service ? page.service.templateId : "sim.baseline_ring",
-                    monospace: true
+                    value: page.service ? page.service.templateId : "sim.baseline_ring"
                 },
                 {
                     label: page.t("适用板型"),
-                    value: page.service ? page.service.templateBoardId : "kzb_f407",
-                    monospace: true
+                    value: page.service ? page.service.templateBoardId : "kzb_f407"
                 },
                 {
                     label: page.t("评审状态"),
@@ -70,7 +59,7 @@ FluScrollablePage {
             Layout.topMargin: 4
             spacing: 10
 
-            FluFilledButton {
+            WorkbenchButton {
                 id: recordReviewBtn
                 objectName: "recordReviewBtn"
                 text: page.t("记录模板复核")
@@ -82,7 +71,7 @@ FluScrollablePage {
                 }
             }
 
-            FluButton {
+            WorkbenchButton {
                 id: exportManifestBtn
                 objectName: "exportManifestBtn"
                 text: page.t("导出评审清单")

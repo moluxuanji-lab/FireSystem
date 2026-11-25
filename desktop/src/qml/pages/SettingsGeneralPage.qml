@@ -1,27 +1,19 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import FluentUI
 import "../components"
 
-FluScrollablePage {
+WorkbenchPage {
     id: page
 
     property var service: null
-    property var hostWindow: null
 
     readonly property var i18n: service ? service.i18n : null
 
     function t(key, arg0) {
         if (!i18n) return key
         return i18n.t(key, i18n.revision, arg0 === undefined ? "" : String(arg0))
-    }
-
-    function roleLabel(role) {
-        if (role === "admin") return t("管理员")
-        if (role === "debugger") return t("调试员")
-        return t("操作员")
     }
 
     function syncLanguageCombo() {
@@ -71,12 +63,6 @@ FluScrollablePage {
         }
     }
 
-    spacing: 16
-    leftPadding: 28
-    rightPadding: 28
-    topPadding: 22
-    bottomPadding: 28
-
     PageHeader {
         service: page.service
         parentLabel: page.t("设置")
@@ -86,7 +72,6 @@ FluScrollablePage {
 
     SectionCard {
         Layout.fillWidth: true
-        Layout.maximumWidth: 920
 
         RowLayout {
             Layout.fillWidth: true
@@ -95,10 +80,11 @@ FluScrollablePage {
             FluText {
                 Layout.fillWidth: true
                 text: page.t("语言")
-                font: FluTextStyle.BodyStrong
+                font.pixelSize: 15
+                textColor: WorkbenchStyle.ink
             }
 
-            FluComboBox {
+            WorkbenchComboBox {
                 id: languageCombo
                 objectName: "languageCombo"
                 Layout.preferredWidth: 240
@@ -117,12 +103,6 @@ FluScrollablePage {
             }
         }
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 1
-            color: FluTheme.dividerColor
-        }
-
         RowLayout {
             Layout.fillWidth: true
             spacing: 16
@@ -130,10 +110,11 @@ FluScrollablePage {
             FluText {
                 Layout.fillWidth: true
                 text: page.t("界面主题")
-                font: FluTextStyle.BodyStrong
+                font.pixelSize: 15
+                textColor: WorkbenchStyle.ink
             }
 
-            FluComboBox {
+            WorkbenchComboBox {
                 id: themeCombo
                 objectName: "themeCombo"
                 Layout.preferredWidth: 240

@@ -5,11 +5,10 @@ import QtQuick.Dialogs
 import FluentUI
 import "../components"
 
-FluScrollablePage {
+WorkbenchPage {
     id: page
 
     property var service: null
-    property var hostWindow: null
 
     readonly property var i18n: service ? service.i18n : null
     readonly property bool hasRecoveryReqToIssue: service && service.issuedRecoveryRequest && service.issuedRecoveryRequest.id !== undefined && service.issuedRecoveryRequest.id !== ""
@@ -89,12 +88,6 @@ FluScrollablePage {
     Component.onCompleted: syncRoleCombo()
     onFormRoleChanged: syncRoleCombo()
 
-    spacing: 16
-    leftPadding: 28
-    rightPadding: 28
-    topPadding: 22
-    bottomPadding: 28
-
     FileDialog {
         id: exportRecoveryRequestDialog
         fileMode: FileDialog.SaveFile
@@ -151,12 +144,12 @@ FluScrollablePage {
         id: managedAccountsCard
         objectName: "managedAccountsCard"
         Layout.fillWidth: true
-        Layout.maximumWidth: 1120
         visible: page.service ? page.service.canManage : false
         title: page.t("本机账号")
-        iconSource: FluentIcons.People
+        glyph: "users"
         headerAction: Component {
-            FluFilledButton {
+            WorkbenchButton {
+                primary: true
                 objectName: "addAccountBtn"
                 text: page.t("新增账号")
                 onClicked: page.startCreate()
@@ -167,9 +160,15 @@ FluScrollablePage {
             id: accountSearchBox
             objectName: "accountSearchBox"
             Layout.fillWidth: true
-            Layout.maximumWidth: 320
             placeholderText: page.t("搜索账号或角色")
-            iconSource: FluentIcons.Search
+            font.pixelSize: 14
+            normalColor: WorkbenchStyle.ink
+            placeholderNormalColor: WorkbenchStyle.muted
+            background: Rectangle {
+                radius: 5
+                color: WorkbenchStyle.panel
+                border.color: accountSearchBox.activeFocus ? WorkbenchStyle.accent : WorkbenchStyle.line
+            }
             text: page.service ? page.service.accountSearchQuery : ""
             onTextChanged: {
                 if (page.service && page.service.accountSearchQuery !== text) {
@@ -181,8 +180,9 @@ FluScrollablePage {
         FluFrame {
             Layout.fillWidth: true
             radius: 6
-            border.color: FluTheme.dividerColor
-            color: FluTheme.frameColor
+            border.color: WorkbenchStyle.line
+            color: WorkbenchStyle.panel
+            border.width: 0
 
             ColumnLayout {
                 anchors.fill: parent
@@ -192,19 +192,28 @@ FluScrollablePage {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 38
-                    color: FluTheme.dark ? Qt.rgba(1, 1, 1, 0.04) : Qt.rgba(0, 0, 0, 0.03)
-                    radius: 6
+                    color: WorkbenchStyle.surface
 
-                    RowLayout {
+                    GridLayout {
+                        columns: 4
+                        uniformCellWidths: true
                         anchors.fill: parent
                         anchors.leftMargin: 14
                         anchors.rightMargin: 14
-                        spacing: 12
+                        columnSpacing: 12
 
-                        FluText { Layout.preferredWidth: 180; Layout.fillWidth: true; text: page.t("账号"); font: FluTextStyle.BodyStrong }
-                        FluText { Layout.preferredWidth: 140; text: page.t("角色"); font: FluTextStyle.BodyStrong }
-                        FluText { Layout.preferredWidth: 140; text: page.t("状态"); font: FluTextStyle.BodyStrong }
-                        FluText { Layout.preferredWidth: 150; text: page.t("操作"); font: FluTextStyle.BodyStrong }
+                        Repeater {
+                            model: ["账号", "角色", "状态", "操作"]
+                            delegate: Text {
+                                required property string modelData
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 1
+                                text: page.t(modelData)
+                                font.pixelSize: 13
+                                font.weight: Font.DemiBold
+                                color: WorkbenchStyle.muted
+                            }
+                        }
                     }
                 }
 
@@ -214,67 +223,71 @@ FluScrollablePage {
                     delegate: Rectangle {
                         id: accountRow
                         required property var modelData
-                        required property int index
 
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 46
-                        color: (accountRow.index % 2 === 1)
-                            ? (FluTheme.dark ? Qt.rgba(1, 1, 1, 0.02) : Qt.rgba(0, 0, 0, 0.015))
-                            : "transparent"
+                        Layout.preferredHeight: 43
+                        color: WorkbenchStyle.panel
 
                         Rectangle {
                             anchors.top: parent.top
                             anchors.left: parent.left
                             anchors.right: parent.right
                             height: 1
-                            color: FluTheme.dividerColor
+                            color: WorkbenchStyle.line
                         }
 
-                        RowLayout {
+                        GridLayout {
+                            columns: 4
+                            uniformCellWidths: true
                             anchors.fill: parent
                             anchors.leftMargin: 14
                             anchors.rightMargin: 14
-                            spacing: 12
+                            columnSpacing: 12
 
                             FluText {
-                                Layout.preferredWidth: 180
+                                Layout.preferredWidth: 1
                                 Layout.fillWidth: true
                                 text: String(accountRow.modelData.id || "")
-                                font: Qt.font({ family: "Consolas", pixelSize: 13 })
+                                font.pixelSize: 14
+                                textColor: WorkbenchStyle.ink
                                 elide: Text.ElideRight
                             }
 
                             FluText {
-                                Layout.preferredWidth: 140
+                                Layout.preferredWidth: 1
+                                Layout.fillWidth: true
                                 text: page.roleLabel(accountRow.modelData.role)
                                 font: FluTextStyle.Body
                             }
 
                             Item {
-                                Layout.preferredWidth: 140
+                                Layout.preferredWidth: 1
+                                Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 StatusChip {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: accountRow.modelData.pending ? page.t("待设置密码") : (accountRow.modelData.enabled ? page.t("启用") : page.t("停用"))
-                                    tone: accountRow.modelData.pending ? "muted" : (accountRow.modelData.enabled ? "accent" : "muted")
+                                    tone: accountRow.modelData.enabled ? "accent" : "muted"
                                 }
                             }
 
-                            RowLayout {
-                                Layout.preferredWidth: 150
+                            Row {
+                                Layout.preferredWidth: 1
+                                Layout.fillWidth: true
                                 spacing: 8
 
                                 FluText {
                                     visible: accountRow.modelData.id === "debug" && (!page.service || page.service.currentAccountId !== "debug")
                                     text: page.t("只读")
                                     font: FluTextStyle.Caption
-                                    textColor: FluTheme.fontSecondaryColor
+                                    textColor: WorkbenchStyle.muted
                                 }
 
                                 FluTextButton {
                                     visible: !(accountRow.modelData.id === "debug" && (!page.service || page.service.currentAccountId !== "debug"))
                                     text: page.t("编辑")
-                                    padding: 4
+                                    textColor: WorkbenchStyle.accent
+                                    padding: 0
                                     onClicked: page.startEdit(accountRow.modelData)
                                 }
 
@@ -282,8 +295,8 @@ FluScrollablePage {
                                     visible: !(accountRow.modelData.id === "debug" && (!page.service || page.service.currentAccountId !== "debug"))
                                         && (!page.service || accountRow.modelData.id !== page.service.currentAccountId)
                                     text: page.t("删除")
-                                    padding: 4
-                                    textColor: FluTheme.dark ? FluColors.Red.lighter : FluColors.Red.dark
+                                    textColor: WorkbenchStyle.accent
+                                    padding: 0
                                     onClicked: page.startDelete(accountRow.modelData)
                                 }
                             }
@@ -297,7 +310,7 @@ FluScrollablePage {
                     visible: page.service ? page.service.accountsModel.length === 0 : true
                     text: page.t("没有匹配的账号。")
                     font: FluTextStyle.Body
-                    textColor: FluTheme.fontSecondaryColor
+                    textColor: WorkbenchStyle.muted
                 }
             }
         }
@@ -310,8 +323,8 @@ FluScrollablePage {
             visible: page.editorMode === "create" || page.editorMode === "edit"
             padding: 16
             radius: 8
-            border.color: FluTheme.dividerColor
-            color: FluTheme.dark ? Qt.rgba(1, 1, 1, 0.04) : Qt.rgba(0, 0, 0, 0.025)
+            border.color: WorkbenchStyle.line
+            color: WorkbenchStyle.surface
 
             ColumnLayout {
                 anchors.fill: parent
@@ -346,7 +359,7 @@ FluScrollablePage {
                         Layout.fillWidth: true
                         spacing: 4
                         FluText { text: page.t("角色"); font: FluTextStyle.BodyStrong }
-                        FluComboBox {
+                        WorkbenchComboBox {
                             id: editAccountRoleCombo
                             objectName: "editAccountRoleCombo"
                             Layout.fillWidth: true
@@ -410,7 +423,8 @@ FluScrollablePage {
                 RowLayout {
                     spacing: 10
 
-                    FluFilledButton {
+                    WorkbenchButton {
+                        primary: true
                         id: saveAccountBtn
                         objectName: "saveAccountBtn"
                         text: page.t("保存账号")
@@ -433,7 +447,7 @@ FluScrollablePage {
                         }
                     }
 
-                    FluButton {
+                    WorkbenchButton {
                         text: page.t("取消")
                         onClicked: page.clearEditor()
                     }
@@ -449,8 +463,8 @@ FluScrollablePage {
             visible: page.editorMode === "delete" && page.deletingId !== ""
             padding: 16
             radius: 8
-            border.color: FluTheme.dividerColor
-            color: FluTheme.dark ? Qt.rgba(1, 1, 1, 0.04) : Qt.rgba(0, 0, 0, 0.025)
+            border.color: WorkbenchStyle.line
+            color: WorkbenchStyle.surface
 
             ColumnLayout {
                 anchors.fill: parent
@@ -465,13 +479,11 @@ FluScrollablePage {
                 RowLayout {
                     spacing: 10
 
-                    FluFilledButton {
+                    WorkbenchButton {
                         id: confirmDeleteAccountBtn
                         objectName: "confirmDeleteAccountBtn"
                         text: page.t("确认删除")
-                        normalColor: FluColors.Red.dark
-                        hoverColor: FluColors.Red.normal
-                        pressedColor: FluColors.Red.darker
+                        danger: true
                         onClicked: {
                             if (page.service && page.service.deleteAccount(page.deletingId)) {
                                 page.clearEditor()
@@ -479,7 +491,7 @@ FluScrollablePage {
                         }
                     }
 
-                    FluButton {
+                    WorkbenchButton {
                         text: page.t("取消")
                         onClicked: page.clearEditor()
                     }
@@ -493,20 +505,17 @@ FluScrollablePage {
         id: operatorAccountCard
         objectName: "operatorAccountCard"
         Layout.fillWidth: true
-        Layout.maximumWidth: 1120
-        visible: page.service ? (page.service.signedIn && !page.service.canManage) : false
-        title: page.t("当前账号")
-        iconSource: FluentIcons.Contact
+        visible: page.service ? (page.service.signedIn && !page.service.canManage && page.editorMode !== "own-password") : false
 
         KeyValueList {
             Layout.fillWidth: true
             items: [
-                { label: page.t("当前账号"), value: page.service ? page.service.currentAccountId : "", monospace: true },
+                { label: page.t("当前账号"), value: page.service ? page.service.currentAccountId : "" },
                 { label: page.t("角色"), value: page.roleLabel(page.service ? page.service.currentAccountRole : "") }
             ]
         }
 
-        FluButton {
+        WorkbenchButton {
             objectName: "openOwnPasswordBtn"
             visible: page.editorMode !== "own-password"
             text: page.t("修改自己的密码")
@@ -525,12 +534,12 @@ FluScrollablePage {
         Layout.maximumWidth: 560
         visible: page.editorMode === "own-password" && (page.service ? page.service.signedIn : false)
         title: page.t("修改自己的密码")
-        iconSource: FluentIcons.Lock
+        glyph: "key"
 
         KeyValueList {
             Layout.fillWidth: true
             items: [
-                { label: page.t("账号"), value: page.service ? page.service.currentAccountId : "", monospace: true },
+                { label: page.t("账号"), value: page.service ? page.service.currentAccountId : "" },
                 { label: page.t("角色"), value: page.roleLabel(page.service ? page.service.currentAccountRole : "") }
             ]
         }
@@ -561,7 +570,8 @@ FluScrollablePage {
 
         RowLayout {
             spacing: 10
-            FluFilledButton {
+            WorkbenchButton {
+                primary: true
                 objectName: "saveOwnPasswordBtn"
                 text: page.t("保存新密码")
                 onClicked: {
@@ -570,7 +580,7 @@ FluScrollablePage {
                     }
                 }
             }
-            FluButton {
+            WorkbenchButton {
                 text: page.t("取消")
                 onClicked: page.clearEditor()
             }
@@ -582,10 +592,10 @@ FluScrollablePage {
         id: signedOutAccountCard
         objectName: "signedOutAccountCard"
         Layout.fillWidth: true
-        Layout.maximumWidth: 1120
         visible: page.service ? !page.service.signedIn : true
 
-        FluFilledButton {
+        WorkbenchButton {
+            primary: true
             objectName: "goLoginFromAccountsBtn"
             text: page.t("登录")
             onClicked: {
@@ -601,9 +611,9 @@ FluScrollablePage {
         id: recoveryGrid
         objectName: "recoveryGrid"
         Layout.fillWidth: true
-        Layout.maximumWidth: 1120
         visible: page.service ? page.service.canRecover : false
-        columns: (page.width >= 760 && page.service && page.service.canIssue) ? 2 : 1
+        uniformCellWidths: true
+        columns: (width > 720 && page.service && page.service.canIssue) ? 2 : 1
         columnSpacing: 16
         rowSpacing: 16
 
@@ -611,19 +621,18 @@ FluScrollablePage {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
             title: page.t("管理员离线恢复")
-            iconSource: FluentIcons.Permissions
+            glyph: "key"
 
             KeyValueList {
                 Layout.fillWidth: true
                 items: [
                     { label: page.t("电脑名称"), value: page.service ? page.service.computerName : "" },
-                    { label: page.t("账号库代次"), value: page.service ? String(page.service.accountGeneration) : "0", monospace: true },
+                    { label: page.t("账号库代次"), value: page.service ? String(page.service.accountGeneration) : "0" },
                     {
                         label: page.t("当前请求"),
                         value: (page.service && page.service.recoveryRequestId !== "")
                             ? page.service.recoveryRequestId
-                            : page.t("尚未生成"),
-                        monospace: page.service ? page.service.recoveryRequestId !== "" : false
+                            : page.t("尚未生成")
                     }
                 ]
             }
@@ -632,7 +641,8 @@ FluScrollablePage {
                 Layout.topMargin: 4
                 spacing: 10
 
-                FluFilledButton {
+                WorkbenchButton {
+                    primary: true
                     objectName: "exportRecoveryReqPrimaryBtn"
                     visible: !(page.service && page.service.recoveryRequestId !== "")
                     text: page.t("导出请求文件")
@@ -646,7 +656,7 @@ FluScrollablePage {
                     }
                 }
 
-                FluButton {
+                WorkbenchButton {
                     objectName: "exportRecoveryReqSecondaryBtn"
                     visible: page.service ? page.service.recoveryRequestId !== "" : false
                     text: page.t("导出请求文件")
@@ -660,14 +670,15 @@ FluScrollablePage {
                     }
                 }
 
-                FluFilledButton {
+                WorkbenchButton {
+                    primary: true
                     objectName: "importRecoveryPrimaryBtn"
                     visible: page.service ? page.service.recoveryRequestId !== "" : false
                     text: page.t("导入恢复文件")
                     onClicked: importRecoveryDialog.open()
                 }
 
-                FluButton {
+                WorkbenchButton {
                     objectName: "importRecoveryBtn"
                     visible: !(page.service && page.service.recoveryRequestId !== "")
                     text: page.t("导入恢复文件")
@@ -683,14 +694,14 @@ FluScrollablePage {
             Layout.alignment: Qt.AlignTop
             visible: page.service ? page.service.canIssue : false
             title: page.t("签发恢复文件")
-            iconSource: FluentIcons.Shield
+            glyph: "shield"
 
             FluText {
                 Layout.fillWidth: true
                 visible: !page.hasRecoveryReqToIssue
                 text: page.t("先导入目标电脑导出的请求文件。")
                 font: FluTextStyle.Body
-                textColor: FluTheme.fontSecondaryColor
+                textColor: WorkbenchStyle.muted
                 wrapMode: Text.WordWrap
             }
 
@@ -706,8 +717,7 @@ FluScrollablePage {
                     },
                     {
                         label: page.t("请求编号"),
-                        value: page.service.issuedRecoveryRequest.id,
-                        monospace: true
+                        value: page.service.issuedRecoveryRequest.id
                     }
                 ] : []
             }
@@ -725,13 +735,15 @@ FluScrollablePage {
                 Layout.topMargin: 4
                 spacing: 10
 
-                FluButton {
+                WorkbenchButton {
+                    primary: !page.hasRecoveryReqToIssue
                     objectName: "importRecoveryReqBtn"
                     text: page.t("导入请求文件")
                     onClicked: importRecoveryReqForIssueDialog.open()
                 }
 
-                FluFilledButton {
+                WorkbenchButton {
+                    primary: page.hasRecoveryReqToIssue
                     objectName: "exportIssuedRecoveryBtn"
                     text: page.t("导出恢复文件")
                     disabled: !page.hasRecoveryReqToIssue

@@ -30,15 +30,63 @@ SettingsService::SettingsService(const QString &storageDir, int pbkdf2Rounds, QO
     m_currentPage = accessLanding();
 }
 
-bool SettingsService::isKnownSettingsPage(const QString &page)
+namespace {
+
+// The sidebar, settings directory and route guard use the same page hierarchy.
+struct PageEntry {
+    const char *id;
+    const char *label;
+    const char *glyph;
+    const char *section;
+};
+
+constexpr PageEntry pages[] = {
+    {"operations", "运行监控", "pulse", ""},
+    {"overview", "运行总览", "grid", "operations"},
+    {"monitor", "设备监控", "pulse", "operations"},
+    {"alarms", "告警中心", "bell", "operations"},
+    {"engineering", "工程配置", "sliders", ""},
+    {"config", "参数配置", "sliders", "engineering"},
+    {"protocol", "协议设计", "network", "engineering"},
+    {"workflow", "流程设计", "flow", "engineering"},
+    {"maintenance", "维护工具", "settings", ""},
+    {"controls", "控制与气瓶", "bottle", "maintenance"},
+    {"upgrade", "固件升级", "up", "maintenance"},
+    {"logs", "日志与审计", "log", "maintenance"},
+    {"terminal", "终端工具", "terminal", "maintenance"},
+    {"settings", "设置", "settings", ""},
+    {"settings-accounts", "账号", "user", "settings"},
+    {"settings-license", "许可证", "key", "settings"},
+    {"settings-templates", "项目模板", "folder", "settings"},
+    {"settings-general", "通用", "sliders", "settings"},
+    {"settings-about", "关于", "help", "settings"},
+    {"help", "帮助", "help", ""},
+    {"login", "登录", "user", ""},
+    {"projects", "项目选择", "folder", "engineering"},
+};
+
+bool isKnownPage(const QString &id)
 {
-    return page == QLatin1String("login")
-        || page == QLatin1String("settings")
-        || page == QLatin1String("settings-accounts")
-        || page == QLatin1String("settings-license")
-        || page == QLatin1String("settings-templates")
-        || page == QLatin1String("settings-general")
-        || page == QLatin1String("settings-about");
+    for (const auto &page : pages) {
+        if (id == QLatin1String(page.id)) return true;
+    }
+    return false;
+}
+
+} // namespace
+
+QVariantList SettingsService::navigationPages() const
+{
+    QVariantList entries;
+    for (const auto &page : pages) {
+        entries.append(QVariantMap{
+            {QStringLiteral("id"), QString::fromLatin1(page.id)},
+            {QStringLiteral("label"), QString::fromUtf8(page.label)},
+            {QStringLiteral("glyph"), QString::fromLatin1(page.glyph)},
+            {QStringLiteral("section"), QString::fromLatin1(page.section)}
+        });
+    }
+    return entries;
 }
 
 bool SettingsService::signedIn() const
@@ -185,13 +233,14 @@ QVariantMap SettingsService::issuedRecoveryRequest() const
 
 bool SettingsService::pageAvailable(const QString &page) const
 {
-    if (!isKnownSettingsPage(page)) {
+    if (!isKnownPage(page)) {
         return false;
     }
     if (unlocked()) {
         return true;
     }
-    return page == QLatin1String("login")
+    return page == QLatin1String("help")
+        || page == QLatin1String("login")
         || page == QLatin1String("settings")
         || page == QLatin1String("settings-accounts")
         || page == QLatin1String("settings-license")
@@ -207,7 +256,7 @@ QString SettingsService::accessLanding() const
 void SettingsService::navigateTo(const QString &page)
 {
     QString target = page;
-    if (!isKnownSettingsPage(target)) {
+    if (!isKnownPage(target)) {
         target = QStringLiteral("settings");
     }
     if (!pageAvailable(target)) {

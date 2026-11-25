@@ -29,6 +29,7 @@ class SettingsService : public QObject
     Q_OBJECT
 
     Q_PROPERTY(QObject *i18n READ i18n CONSTANT)
+    Q_PROPERTY(QVariantList navigationPages READ navigationPages CONSTANT)
     Q_PROPERTY(QString currentPage READ currentPage NOTIFY stateChanged)
     Q_PROPERTY(bool signedIn READ signedIn NOTIFY stateChanged)
     Q_PROPERTY(bool licensed READ licensed NOTIFY stateChanged)
@@ -81,6 +82,7 @@ public:
     PreferencesManager *preferencesManager() { return &m_prefs; }
     TemplateReviewManager *templateReviewManager() { return &m_templates; }
 
+    QVariantList navigationPages() const;
     QString currentPage() const { return m_currentPage; }
     bool signedIn() const;
     bool licensed() const;
@@ -181,7 +183,6 @@ private:
         QString theme;
     };
 
-    static bool isKnownSettingsPage(const QString &page);
     void refreshAccessAndClearTransients();
     void emitError(const QString &zhError);
     void emitSuccess(const QString &zhMsg);

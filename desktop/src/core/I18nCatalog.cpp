@@ -47,6 +47,31 @@ I18nCatalog::I18nCatalog(QObject *parent)
     add("管理工作站外观、账号、模板与版本。", "Manage appearance, accounts, templates and versions.", "Настраивайте оформление, учётные записи, шаблоны и версии.", "Darstellung, Konten, Vorlagen und Versionen verwalten.", "Gérez l’apparence, les comptes, les modèles et les versions.", "Gestione la apariencia, las cuentas, las plantillas y las versiones.");
     add("管理模拟工作站的身份与离线许可。", "Manage workstation sign-in and the simulated offline license.", "Вход на станцию и автономная демонстрационная лицензия.", "Anmeldung und simulierte Offline-Lizenz der Station verwalten.", "Gérez la session et la licence hors ligne de la station simulée.", "Gestione el acceso y la licencia sin conexión de la estación simulada.");
 
+    add("运行监控", "Operations", "Мониторинг", "Betriebsüberwachung", "Supervision", "Supervisión");
+    add("运行总览", "Overview", "Обзор", "Übersicht", "Vue d’ensemble", "Vista general");
+    add("设备监控", "Device monitor", "Мониторинг устройств", "Geräteüberwachung", "Suivi des équipements", "Monitor de equipos");
+    add("告警中心", "Alarms", "Тревоги", "Alarme", "Alarmes", "Alarmas");
+    add("工程配置", "Engineering", "Проектирование", "Projektierung", "Ingénierie", "Ingeniería");
+    add("参数配置", "Parameters", "Параметры", "Parameter", "Paramètres", "Parámetros");
+    add("协议设计", "Protocol designer", "Редактор протоколов", "Protokolleditor", "Éditeur de protocoles", "Editor de protocolos");
+    add("流程设计", "Workflow designer", "Редактор процессов", "Ablaufeditor", "Éditeur de séquences", "Editor de secuencias");
+    add("维护工具", "Maintenance", "Обслуживание", "Wartung", "Maintenance", "Mantenimiento");
+    add("控制与气瓶", "Control & cylinders", "Управление и баллоны", "Steuerung und Flaschen", "Commande et bouteilles", "Control y botellas");
+    add("固件升级", "Firmware Update", "Обновление прошивки", "Firmware-Update", "Mise à jour du micrologiciel", "Actualización de firmware");
+    add("日志与审计", "Logs & audit", "Журналы и аудит", "Protokolle und Audit", "Journaux et audit", "Registros y auditoría");
+    add("终端工具", "Terminals", "Терминалы", "Terminals", "Terminaux", "Terminales");
+    add("帮助", "Help", "Справка", "Hilfe", "Aide", "Ayuda");
+    add("项目选择", "Projects", "Выбор проекта", "Projektauswahl", "Choix du projet", "Selección de proyecto");
+    add("工作站", "Workstation", "Рабочая станция", "Arbeitsstation", "Station de travail", "Estación de trabajo");
+    add("切换导航", "Toggle navigation", "Переключить навигацию", "Navigation umschalten", "Basculer la navigation", "Alternar navegación");
+    add("环线基准项目", "Ring line baseline", "Базовый проект кольцевой линии", "Ringlinie – Basismodell", "Projet de base de ligne circulaire", "Proyecto base de línea circular");
+    add("评审记录", "Review notes", "Журнал замечаний", "Prüfanmerkungen", "Notes de revue", "Notas de revisión");
+    add("页面评审", "Page review", "Оценка страницы", "Seitenprüfung", "Revue de la page", "Revisión de página");
+    add("页面搜索", "Find a page", "Поиск страницы", "Seitensuche", "Recherche de page", "Buscar página");
+    add("搜索页面", "Find a page", "Поиск страницы", "Seite suchen", "Rechercher une page", "Buscar página");
+    add("输入页面名称", "Enter a page name", "Введите название страницы", "Seitennamen eingeben", "Saisissez le nom d’une page", "Introduzca el nombre de una página");
+    add("未找到页面", "Page not found", "Страница не найдена", "Seite nicht gefunden", "Page introuvable", "Página no encontrada");
+
     // Roles & Badges
     add("操作员", "Operator", "Оператор", "Bediener", "Opérateur", "Operador");
     add("管理员", "Administrator", "Администратор", "Administrator", "Administrateur", "Administrador");

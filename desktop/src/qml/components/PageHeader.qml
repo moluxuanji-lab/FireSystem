@@ -1,86 +1,52 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
-import FluentUI
 
 ColumnLayout {
     id: root
-
-    property var service: null
+    property var service
     property string parentLabel: ""
     property string parentPage: ""
     property string pageTitle: ""
-    property string subtitle: ""
-
-    readonly property var i18n: service ? service.i18n : null
-
-    function t(key) {
-        if (!i18n) return key
-        return i18n.t(key, i18n.revision)
-    }
-
     Layout.fillWidth: true
-    spacing: 6
+    Layout.bottomMargin: 5
+    spacing: 13
+
+    component Crumb: AbstractButton {
+        id: link
+        implicitWidth: label.implicitWidth
+        implicitHeight: 18
+        contentItem: Text {
+            id: label
+            text: link.text
+            color: WorkbenchStyle.accent
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: 12
+            font.underline: link.hovered || link.visualFocus
+        }
+    }
 
     RowLayout {
-        Layout.fillWidth: true
-        spacing: 6
-
-        FluTextButton {
+        spacing: 8
+        Crumb {
             text: "FireSystem"
-            font: FluTextStyle.Caption
-            padding: 2
-            onClicked: {
-                if (root.service) {
-                    root.service.navigateTo("settings")
-                }
-            }
+            onClicked: if (root.service) root.service.navigateTo(root.service.unlocked ? "overview" : root.service.accessLanding())
         }
-
-        FluIcon {
-            iconSource: FluentIcons.ChevronRight
-            iconSize: 10
-            iconColor: FluTheme.fontSecondaryColor
-        }
-
-        FluTextButton {
+        WorkbenchIcon { glyph: "chevron"; size: 11 }
+        Crumb {
             visible: root.parentLabel !== ""
             text: root.parentLabel
-            font: FluTextStyle.Caption
-            padding: 2
-            onClicked: {
-                if (root.service && root.parentPage !== "") {
-                    root.service.navigateTo(root.parentPage)
-                }
-            }
+            onClicked: if (root.service) root.service.navigateTo(root.parentPage)
         }
-
-        FluIcon {
-            visible: root.parentLabel !== ""
-            iconSource: FluentIcons.ChevronRight
-            iconSize: 10
-            iconColor: FluTheme.fontSecondaryColor
-        }
-
-        FluText {
-            text: root.pageTitle
-            font: FluTextStyle.Caption
-            textColor: FluTheme.fontPrimaryColor
-        }
+        WorkbenchIcon { visible: root.parentLabel !== ""; glyph: "chevron"; size: 11 }
+        Text { text: root.pageTitle; color: WorkbenchStyle.ink; font.pixelSize: 12 }
     }
-
-    FluText {
+    Text {
         Layout.fillWidth: true
         text: root.pageTitle
-        font: FluTextStyle.Title
-        wrapMode: Text.WordWrap
-    }
-
-    FluText {
-        Layout.fillWidth: true
-        visible: root.subtitle !== ""
-        text: root.subtitle
-        font: FluTextStyle.Body
-        textColor: FluTheme.fontSecondaryColor
+        color: WorkbenchStyle.ink
+        font.pixelSize: Math.max(25, Math.min(34, Math.round((Window.window ? Window.window.width : root.width) * 0.021)))
+        font.weight: Font.DemiBold
         wrapMode: Text.WordWrap
     }
 }

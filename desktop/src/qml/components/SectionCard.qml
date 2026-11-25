@@ -1,63 +1,44 @@
 import QtQuick
 import QtQuick.Layouts
-import FluentUI
 
-FluFrame {
+Rectangle {
     id: root
-
     property string title: ""
-    property int iconSource: 0
-    property string badgeText: ""
-    property bool badgeMuted: false
+    property string glyph: ""
     property Component headerAction: null
     default property alias content: bodyColumn.data
+    readonly property int inset: width < 400 ? 15 : 20
 
-    radius: 8
-    padding: 20
-    border.color: FluTheme.dividerColor
-    color: FluTheme.frameActiveColor
+    radius: 10
+    implicitHeight: mainColumn.implicitHeight + inset * 2
+    color: WorkbenchStyle.panel
+    border.color: WorkbenchStyle.line
 
     ColumnLayout {
         id: mainColumn
-        anchors.fill: parent
-        spacing: 14
-
+        x: root.inset
+        y: root.inset
+        width: root.width - 2 * root.inset
+        spacing: 15
         RowLayout {
             Layout.fillWidth: true
             spacing: 10
-            visible: root.title !== "" || root.badgeText !== "" || root.headerAction !== null
-
-            FluIcon {
-                visible: root.iconSource !== 0
-                iconSource: root.iconSource
-                iconSize: 18
-                iconColor: FluTheme.primaryColor
-            }
-
-            FluText {
+            visible: root.title !== "" || root.headerAction !== null
+            WorkbenchIcon { visible: root.glyph !== ""; glyph: root.glyph; ink: WorkbenchStyle.accent; size: 19 }
+            Text {
                 Layout.fillWidth: true
-                visible: root.title !== ""
                 text: root.title
-                font: FluTextStyle.Subtitle
+                font.pixelSize: 17
+                font.weight: Font.DemiBold
+                color: WorkbenchStyle.ink
                 wrapMode: Text.WordWrap
             }
-
-            StatusChip {
-                visible: root.badgeText !== ""
-                text: root.badgeText
-                tone: root.badgeMuted ? "muted" : "accent"
-            }
-
-            FluLoader {
-                sourceComponent: root.headerAction
-                visible: root.headerAction !== null
-            }
+            Loader { sourceComponent: root.headerAction; visible: root.headerAction !== null }
         }
-
         ColumnLayout {
             id: bodyColumn
             Layout.fillWidth: true
-            spacing: 12
+            spacing: 15
         }
     }
 }

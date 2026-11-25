@@ -5,11 +5,10 @@ import QtQuick.Dialogs
 import FluentUI
 import "../components"
 
-FluScrollablePage {
+WorkbenchPage {
     id: page
 
     property var service: null
-    property var hostWindow: null
 
     readonly property var i18n: service ? service.i18n : null
     readonly property bool eligible: service ? (!service.licensed || service.canManage) : true
@@ -41,12 +40,6 @@ FluScrollablePage {
         syncIssueModeCombo()
     }
     onIssueModeChanged: syncIssueModeCombo()
-
-    spacing: 16
-    leftPadding: 28
-    rightPadding: 28
-    topPadding: 22
-    bottomPadding: 28
 
     FileDialog {
         id: exportLicenseRequestDialog
@@ -106,8 +99,8 @@ FluScrollablePage {
 
     GridLayout {
         Layout.fillWidth: true
-        Layout.maximumWidth: 1120
-        columns: (page.width >= 760 && page.service && page.service.canIssue) ? 2 : 1
+        uniformCellWidths: true
+        columns: (width > 720 && page.service && page.service.canIssue) ? 2 : 1
         columnSpacing: 16
         rowSpacing: 16
 
@@ -117,9 +110,7 @@ FluScrollablePage {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
             title: page.t("许可文件")
-            iconSource: FluentIcons.Permissions
-            badgeText: (page.service && page.service.licensed) ? page.t("有效") : page.t("已失效")
-            badgeMuted: !(page.service && page.service.licensed)
+            glyph: "key"
 
             KeyValueList {
                 Layout.fillWidth: true
@@ -129,24 +120,26 @@ FluScrollablePage {
                         { label: page.t("当前状态"), value: (page.service && page.service.licensed) ? page.t("有效") : page.t("已失效") }
                     ]
                     if (page.service && page.service.licenseNotAfter !== "") {
-                        list.push({ label: page.t("有效期"), value: page.service.licenseNotAfter, monospace: true })
+                        list.push({ label: page.t("有效期"), value: page.service.licenseNotAfter })
                     }
                     if (page.service && page.service.licenseRequestId !== "") {
-                        list.push({ label: page.t("当前请求"), value: page.service.licenseRequestId, monospace: true })
+                        list.push({ label: page.t("当前请求"), value: page.service.licenseRequestId })
                     }
                     return list
                 }
             }
 
-            Flow {
+            GridLayout {
                 Layout.fillWidth: true
-                Layout.topMargin: 4
-                spacing: 10
-
-                FluFilledButton {
-                    id: exportLicenseReqBtn
+                columns: (width <= 380) ? 1 : page.isManagerRole ? 3 : 2
+                uniformCellWidths: true
+                columnSpacing: 8
+                rowSpacing: 8
+                WorkbenchButton {
                     objectName: "exportLicenseReqBtn"
-                    visible: !(page.service && page.service.licenseRequestId !== "")
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    primary: page.service && !page.service.licenseRequestId
                     text: page.t("导出请求文件")
                     disabled: !page.eligible
                     onClicked: {
@@ -158,45 +151,23 @@ FluScrollablePage {
                         }
                     }
                 }
-
-                FluButton {
-                    objectName: "exportLicenseReqSecondaryBtn"
-                    visible: page.service ? page.service.licenseRequestId !== "" : false
-                    text: page.t("导出请求文件")
-                    disabled: !page.eligible
-                    onClicked: {
-                        if (page.service) {
-                            exportLicenseRequestDialog.currentFile = page.service.suggestedExportFileUrl(
-                                page.service.suggestedExportFileName("license-request")
-                            )
-                            exportLicenseRequestDialog.open()
-                        }
-                    }
-                }
-
-                FluFilledButton {
-                    objectName: "importLicensePrimaryBtn"
-                    visible: page.service ? page.service.licenseRequestId !== "" : false
-                    text: page.t("导入许可文件")
-                    disabled: !page.eligible
-                    onClicked: importLicenseDialog.open()
-                }
-
-                FluButton {
+                WorkbenchButton {
                     objectName: "importLicenseBtn"
-                    visible: !(page.service && page.service.licenseRequestId !== "")
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    primary: page.service && page.service.licenseRequestId !== ""
                     text: page.t("导入许可文件")
                     disabled: !page.eligible
                     onClicked: importLicenseDialog.open()
                 }
-
-                FluButton {
-                    id: clearLicenseBtn
+                WorkbenchButton {
                     objectName: "clearLicenseBtn"
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
                     visible: page.isManagerRole
+                    danger: true
                     text: page.t("清除许可")
                     disabled: !(page.service && page.service.licensed)
-                    textColor: FluTheme.dark ? FluColors.Red.lighter : FluColors.Red.dark
                     onClicked: page.confirmClear = true
                 }
             }
@@ -208,8 +179,8 @@ FluScrollablePage {
                 visible: page.confirmClear && page.isManagerRole && (page.service ? page.service.licensed : false)
                 padding: 16
                 radius: 8
-                border.color: FluTheme.dividerColor
-                color: FluTheme.dark ? Qt.rgba(1, 1, 1, 0.04) : Qt.rgba(0, 0, 0, 0.025)
+                border.color: WorkbenchStyle.line
+                color: WorkbenchStyle.surface
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -225,13 +196,11 @@ FluScrollablePage {
                     RowLayout {
                         spacing: 10
 
-                        FluFilledButton {
+                        WorkbenchButton {
                             id: confirmClearLicenseBtn
                             objectName: "confirmClearLicenseBtn"
                             text: page.t("确认清除")
-                            normalColor: FluColors.Red.dark
-                            hoverColor: FluColors.Red.normal
-                            pressedColor: FluColors.Red.darker
+                            danger: true
                             onClicked: {
                                 if (page.service) {
                                     page.service.clearLicense()
@@ -240,7 +209,7 @@ FluScrollablePage {
                             }
                         }
 
-                        FluButton {
+                        WorkbenchButton {
                             text: page.t("取消")
                             onClicked: page.confirmClear = false
                         }
@@ -263,14 +232,14 @@ FluScrollablePage {
             Layout.alignment: Qt.AlignTop
             visible: page.service ? page.service.canIssue : false
             title: page.t("签发许可文件")
-            iconSource: FluentIcons.Shield
+            glyph: "shield"
 
             FluText {
                 Layout.fillWidth: true
                 visible: !page.hasReqToIssue
                 text: page.t("先导入目标电脑导出的请求文件。")
                 font: FluTextStyle.Body
-                textColor: FluTheme.fontSecondaryColor
+                textColor: WorkbenchStyle.muted
                 wrapMode: Text.WordWrap
             }
 
@@ -286,8 +255,7 @@ FluScrollablePage {
                     },
                     {
                         label: page.t("请求编号"),
-                        value: page.service.issuedLicenseRequest.id,
-                        monospace: true
+                        value: page.service.issuedLicenseRequest.id
                     }
                 ] : []
             }
@@ -313,7 +281,7 @@ FluScrollablePage {
                     font: FluTextStyle.BodyStrong
                 }
 
-                FluComboBox {
+                WorkbenchComboBox {
                     id: issueModeCombo
                     objectName: "issueModeCombo"
                     Layout.fillWidth: true
@@ -381,14 +349,16 @@ FluScrollablePage {
                 Layout.topMargin: 4
                 spacing: 10
 
-                FluButton {
+                WorkbenchButton {
+                    primary: !page.hasReqToIssue
                     id: importLicenseReqBtn
                     objectName: "importLicenseReqBtn"
                     text: page.t("导入请求文件")
                     onClicked: importRequestForIssueDialog.open()
                 }
 
-                FluFilledButton {
+                WorkbenchButton {
+                    primary: page.hasReqToIssue
                     id: exportIssuedLicenseBtn
                     objectName: "exportIssuedLicenseBtn"
                     text: page.t("导出许可文件")

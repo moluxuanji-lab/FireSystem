@@ -127,6 +127,51 @@ TestCase {
         tryCompare(svc, "unlocked", false)
     }
 
+    function test_workbench_navigation_and_placeholders() {
+        const svc = SettingsTestFactory.createService()
+        const win = createTemporaryObject(mainComp, root, { service: svc })
+        verify(win !== null)
+        waitForRendering(win.contentItem)
+        const rail = findChild(win.contentItem, "mainNavView")
+        const settings = findChild(rail, "nav-settings")
+        mouseClick(settings)
+        tryCompare(svc, "currentPage", "settings")
+        mouseClick(findChild(win.contentItem, "navCardGeneral"))
+        tryCompare(svc, "currentPage", "settings-general")
+        verify(settings.selected)
+        verify(findChild(rail, "nav-monitor") === null)
+
+        mouseClick(findChild(rail, "nav-help"))
+        tryCompare(svc, "currentPage", "help")
+        const loader = findChild(win.contentItem, "pageLoader")
+        compare(loader.item.objectName, "placeholderPage")
+        verify(!settings.selected)
+        svc.navigateTo("monitor")
+        tryCompare(svc, "currentPage", "settings-license")
+
+        activateLicenseViaUi(win)
+        waitForRendering(win.contentItem)
+        const monitor = findChild(rail, "nav-monitor")
+        verify(monitor && monitor.visible)
+        mouseClick(monitor)
+        tryCompare(svc, "currentPage", "monitor")
+        compare(loader.item.objectName, "placeholderPage")
+        verify(monitor.selected)
+        mouseClick(settings)
+        tryCompare(svc, "currentPage", "settings")
+        verify(findChild(loader.item, "navCardTemplates").visible)
+
+        win.width = 720
+        tryCompare(rail, "visible", false)
+        waitForRendering(win.contentItem)
+        mouseClick(findChild(win.contentItem, "toggleNavigationButton"))
+        tryCompare(rail, "visible", true)
+        waitForRendering(rail)
+        mouseClick(findChild(rail, "nav-help"))
+        tryCompare(svc, "currentPage", "help")
+        tryCompare(rail, "visible", false)
+    }
+
     function test_live_6_language_and_3_theme_switching() {
         const svc = SettingsTestFactory.createService()
         const win = createTemporaryObject(mainComp, root, { service: svc })

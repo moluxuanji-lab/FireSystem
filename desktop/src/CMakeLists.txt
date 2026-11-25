@@ -36,13 +36,18 @@ set(QML_IMPORT_PATH
 
 qt_add_library(${UI_TARGET} STATIC)
 
+set_source_files_properties(qml/components/WorkbenchStyle.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
 qt_add_qml_module(${UI_TARGET}
     URI FireSystem.UI
     VERSION 1.0
     RESOURCE_PREFIX /qt/qml
     OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml/FireSystem/UI"
+    IMPORT_PATH "${CMAKE_BINARY_DIR}/third_party/FluentUI/src"
     IMPORTS
         FluentUI
+    RESOURCES
+        qml/components/firesystem.svg
     QML_FILES
         Main.qml
         FluentUIDeps.qml
@@ -51,6 +56,15 @@ qt_add_qml_module(${UI_TARGET}
         qml/components/NoticeBanner.qml
         qml/components/StatusChip.qml
         qml/components/PageHeader.qml
+        qml/components/WorkbenchButton.qml
+        qml/components/WorkbenchComboBox.qml
+        qml/components/WorkbenchGlyphs.js
+        qml/components/WorkbenchHeader.qml
+        qml/components/WorkbenchIcon.qml
+        qml/components/WorkbenchNavButton.qml
+        qml/components/WorkbenchPage.qml
+        qml/components/WorkbenchSidebar.qml
+        qml/components/WorkbenchStyle.qml
         qml/pages/LoginPage.qml
         qml/pages/SettingsPage.qml
         qml/pages/SettingsAccountsPage.qml

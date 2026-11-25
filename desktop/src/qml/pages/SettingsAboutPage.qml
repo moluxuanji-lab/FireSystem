@@ -1,14 +1,12 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
-import FluentUI
 import "../components"
 
-FluScrollablePage {
+WorkbenchPage {
     id: page
 
     property var service: null
-    property var hostWindow: null
 
     readonly property var i18n: service ? service.i18n : null
     property bool showTrustDetails: false
@@ -17,12 +15,6 @@ FluScrollablePage {
         if (!i18n) return key
         return i18n.t(key, i18n.revision)
     }
-
-    spacing: 16
-    leftPadding: 28
-    rightPadding: 28
-    topPadding: 22
-    bottomPadding: 28
 
     PageHeader {
         service: page.service
@@ -33,71 +25,61 @@ FluScrollablePage {
 
     SectionCard {
         Layout.fillWidth: true
-        Layout.maximumWidth: 920
         title: page.t("版本与兼容性")
-        iconSource: FluentIcons.Info
+        glyph: "monitor"
 
-        FluTableView {
+        ColumnLayout {
             id: compatTable
             objectName: "compatTable"
             Layout.fillWidth: true
-            Layout.preferredHeight: 38 + 5 * 42 + 2
-            verticalHeaderVisible: false
-
-            Component {
-                id: headerComponentCol
-                FluText {
-                    text: page.t("组件")
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            Component {
-                id: headerVersionCol
-                FluText {
-                    text: page.t("版本 / 标识")
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            Component {
-                id: headerScopeCol
-                FluText {
-                    text: page.t("适用范围")
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            columnSource: [
-                {
-                    title: compatTable.customItem(headerComponentCol),
-                    dataIndex: "component",
-                    width: 240,
-                    readOnly: true
-                },
-                {
-                    title: compatTable.customItem(headerVersionCol),
-                    dataIndex: "version",
-                    width: 240,
-                    readOnly: true
-                },
-                {
-                    title: compatTable.customItem(headerScopeCol),
-                    dataIndex: "scope",
-                    width: 340,
-                    readOnly: true
-                }
+            spacing: 0
+            readonly property var columnSource: ["组件", "版本 / 标识", "适用范围"]
+            readonly property var rows: [
+                columnSource.map(label => page.t(label)),
+                [page.t("桌面兼容基线"), "1.0.0-rc1", "Windows / Linux / macOS"],
+                [page.t("项目模板"), page.service ? page.service.templateVersion : "", page.service ? page.service.templateId : ""],
+                [page.t("管理 API"), "1.0", "kzb_f407"],
+                [page.t("配置模型"), "p04.config.draft1", page.t("模拟模板")],
+                [page.t("流程 IR"), "WF02-v1", page.t("本地仿真")]
             ]
-            dataSource: [
-                { component: page.t("桌面兼容基线"), version: "1.0.0-rc1", scope: "Windows / Linux / macOS" },
-                { component: page.t("项目模板"), version: page.service ? page.service.templateVersion : "1.2.1", scope: page.service ? page.service.templateId : "sim.baseline_ring" },
-                { component: page.t("管理 API"), version: "1.0", scope: "kzb_f407" },
-                { component: page.t("配置模型"), version: "p04.config.draft1", scope: page.t("模拟模板") },
-                { component: page.t("流程 IR"), version: "WF02-v1", scope: page.t("本地仿真") }
-            ]
+            Repeater {
+                model: compatTable.rows
+                delegate: Rectangle {
+                    id: tableRow
+                    required property var modelData
+                    required property int index
+                    Layout.fillWidth: true
+                    implicitHeight: cells.implicitHeight + 20
+                    color: index === 0 ? WorkbenchStyle.surface : WorkbenchStyle.panel
+                    RowLayout {
+                        id: cells
+                        x: 12
+                        width: parent.width - 24
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 24
+                        Repeater {
+                            model: tableRow.modelData
+                            delegate: Text {
+                                required property string modelData
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 1
+                                text: modelData
+                                color: tableRow.index === 0 ? WorkbenchStyle.muted : WorkbenchStyle.ink
+                                font.pixelSize: tableRow.index === 0 ? 13 : 14
+                                font.weight: tableRow.index === 0 ? Font.DemiBold : Font.Normal
+                                wrapMode: Text.Wrap
+                            }
+                        }
+                    }
+                    Rectangle {
+                        visible: tableRow.index < compatTable.rows.length - 1
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        height: 1
+                        color: WorkbenchStyle.line
+                    }
+                }
+            }
         }
     }
 
@@ -105,10 +87,9 @@ FluScrollablePage {
         id: trustCatalogCard
         objectName: "trustCatalogCard"
         Layout.fillWidth: true
-        Layout.maximumWidth: 920
         visible: page.service ? page.service.unlocked : false
         title: page.t("信任目录")
-        iconSource: FluentIcons.Shield
+        glyph: "shield"
 
         KeyValueList {
             Layout.fillWidth: true
@@ -124,7 +105,7 @@ FluScrollablePage {
             Layout.topMargin: 2
             spacing: 10
 
-            FluButton {
+            WorkbenchButton {
                 id: trustDetailBtn
                 objectName: "trustDetailBtn"
                 text: page.showTrustDetails ? page.t("收起详情") : page.t("查看信任记录")
@@ -139,13 +120,6 @@ FluScrollablePage {
             visible: page.showTrustDetails
             kind: "info"
             text: page.t("SIM-ROOT-01 只识别演示文件类型。正式发行由离线签发方提供凭据。")
-        }
-
-        NoticeBanner {
-            Layout.fillWidth: true
-            visible: page.showTrustDetails
-            kind: "warning"
-            text: page.t("真实硬件绑定、板卡管理接口与生产签发根当前属于无法确认项，本模块仅运行本地工作站仿真（SIM-ROOT-01）。")
         }
     }
 }

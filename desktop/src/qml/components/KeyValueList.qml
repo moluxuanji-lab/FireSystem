@@ -1,56 +1,47 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
-import FluentUI
 
 ColumnLayout {
     id: root
-
     property var items: []
-
     spacing: 0
 
     Repeater {
         model: root.items
-
-        delegate: ColumnLayout {
-            id: kvDelegate
+        delegate: Item {
+            id: entry
             required property var modelData
             required property int index
-
             Layout.fillWidth: true
-            spacing: 0
+            implicitHeight: Math.max(label.implicitHeight, value.implicitHeight) + 21
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: 10
-                Layout.bottomMargin: 10
-                spacing: 16
-
-                FluText {
-                    Layout.preferredWidth: 160
-                    Layout.minimumWidth: 90
-                    text: String(kvDelegate.modelData.label || "")
-                    font: FluTextStyle.Body
-                    textColor: FluTheme.fontSecondaryColor
-                    wrapMode: Text.WordWrap
-                }
-
-                FluText {
-                    Layout.fillWidth: true
-                    text: String(kvDelegate.modelData.value || "")
-                    font: kvDelegate.modelData.monospace
-                        ? Qt.font({ family: "Consolas", pixelSize: 13 })
-                        : FluTextStyle.BodyStrong
-                    wrapMode: Text.WrapAnywhere
-                }
+            Text {
+                id: label
+                y: 10
+                width: Math.max(90, (entry.width - 8) * 0.375)
+                text: entry.modelData.label
+                font.pixelSize: 14
+                color: WorkbenchStyle.muted
+                wrapMode: Text.Wrap
             }
-
+            Text {
+                id: value
+                y: 10
+                anchors.left: label.right
+                anchors.leftMargin: 8
+                anchors.right: parent.right
+                text: entry.modelData.value
+                font.pixelSize: 14
+                color: WorkbenchStyle.ink
+                wrapMode: Text.Wrap
+            }
             Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                color: FluTheme.dividerColor
-                visible: kvDelegate.index < root.items.length - 1
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: 1
+                color: WorkbenchStyle.line
+                visible: entry.index < root.items.length - 1
             }
         }
     }
