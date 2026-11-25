@@ -1,3 +1,4 @@
+// qmllint disable unused-imports
 // Declares transitive Qt QML modules imported internally by FluentUI
 // so Qt's qmlimportscanner & qt_generate_deploy_qml_app_script deploy them on all platforms.
 import QtQml
