@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QSaveFile>
+#include <QStandardPaths>
 #include <QTimeZone>
 #include <QUrl>
 
@@ -810,6 +811,16 @@ QString SettingsService::suggestedExportFileName(const QString &kind) const
         return QStringLiteral("template-review.json");
     }
     return QStringLiteral("export.json");
+}
+
+QUrl SettingsService::suggestedExportFileUrl(const QString &fileName) const
+{
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (dir.isEmpty()) {
+        dir = QDir::homePath();
+    }
+    const QString cleanName = QFileInfo(fileName).fileName();
+    return QUrl::fromLocalFile(QDir(dir).filePath(cleanName.isEmpty() ? QStringLiteral("export.json") : cleanName));
 }
 
 int SettingsService::maxUtcYearOffset() const

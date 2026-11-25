@@ -258,20 +258,18 @@ FluWindow {
                     id: profileDropdown
                     objectName: "headerProfileDropdown"
                     visible: window.service ? window.service.signedIn : false
-                    implicitWidth: Math.max(168, contentText.implicitWidth + 56)
-                    text: ""
-
-                    FluText {
-                        id: contentText
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        anchors.leftMargin: 12
-                        text: window.service
-                            ? (window.service.currentAccountId + " · " + window.roleLabel(window.service.currentAccountRole))
-                            : ""
-                        font: FluTextStyle.Caption
+                    text: window.service && window.service.signedIn
+                        ? (window.service.currentAccountId + " · " + window.roleLabel(window.service.currentAccountRole))
+                        : ""
+                    font: FluTextStyle.Caption
+                    implicitWidth: Math.max(168, Math.min(280, implicitContentWidth + leftPadding + rightPadding))
+                    contentItem: FluText {
+                        text: profileDropdown.text
+                        font: profileDropdown.font
+                        textColor: profileDropdown.textColor
                         elide: Text.ElideRight
-                        width: Math.max(80, parent.width - 42)
+                        horizontalAlignment: Text.AlignLeft
+                        verticalAlignment: Text.AlignVCenter
                     }
 
                     FluMenuItem {

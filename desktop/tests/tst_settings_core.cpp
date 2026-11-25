@@ -13,6 +13,8 @@
 #include <QTemporaryDir>
 #include <QTimeZone>
 
+#include <limits>
+
 #include "core/AccountManager.h"
 #include "core/I18nCatalog.h"
 #include "core/OfflineFileManager.h"
@@ -34,6 +36,7 @@ private slots:
     void testSettingsExportImportV1AndLegacyV2();
     void testTemplateReviewAndI18n6LanguagesAndTheme();
     void testAccessGating();
+    void testOverflowAndTamperedStorageHardening();
 };
 
 void TestSettingsCore::testPbkdf2Sha256_600000Rounds()
@@ -441,6 +444,71 @@ void TestSettingsCore::testAccessGating()
     QCOMPARE(svc.currentPage(), QStringLiteral("settings-about"));
     svc.navigateTo(QStringLiteral("settings-accounts"));
     QCOMPARE(svc.currentPage(), QStringLiteral("settings-accounts"));
+}
+
+void TestSettingsCore::testOverflowAndTamperedStorageHardening()
+{
+    // 1. Signed integer overflow prevention in computeLicenseEndDate("years", INT_MAX)
+    QString err;
+    const QString overflowResult = OfflineFileManager::computeLicenseEndDate(
+        QStringLiteral("years"),
+        std::numeric_limits<int>::max(),
+        QString(),
+        &err);
+    QVERIFY(overflowResult.isEmpty());
+    QVERIFY(!err.isEmpty());
+
+    // 2. Tampered offline-files.json must never report licensed == true
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    AccountManager mgr(dir.path(), 1000);
+    OfflineFileManager files(dir.path(), &mgr);
+    QVERIFY(mgr.initialize(&err));
+
+    const QList<QJsonObject> tamperedPayloads = {
+        QJsonObject{{QStringLiteral("license"), QJsonObject{{QStringLiteral("notAfter"), 12345}}}},
+        QJsonObject{{QStringLiteral("license"), QJsonObject{{QStringLiteral("notAfter"), true}}}},
+        QJsonObject{{QStringLiteral("license"), QJsonObject{{QStringLiteral("notAfter"), QJsonValue::Null}}}},
+        QJsonObject{{QStringLiteral("license"), QJsonObject{}}},
+        QJsonObject{{QStringLiteral("license"), QJsonObject{{QStringLiteral("notAfter"), QStringLiteral("2099-12-31")}}}},
+        QJsonObject{{QStringLiteral("license"), QJsonObject{
+            {QStringLiteral("id"), QStringLiteral("bad")},
+            {QStringLiteral("machineId"), QStringLiteral("0123456789abcdef0123456789abcdef")},
+            {QStringLiteral("notAfter"), QStringLiteral("2099-12-31")}
+        }}},
+    };
+    for (const QJsonObject &payload : tamperedPayloads) {
+        QFile f(files.storageFilePath());
+        QVERIFY(f.open(QIODevice::WriteOnly | QIODevice::Truncate));
+        f.write(QJsonDocument(payload).toJson());
+        f.close();
+        const LicenseStatus st = files.licenseStatus();
+        QVERIFY(!st.licensed);
+        QVERIFY(st.notAfter.isEmpty());
+    }
+
+    // 3. Recovery generation > INT_MAX rejected without UB
+    QVERIFY(mgr.login(QStringLiteral("debug"), QStringLiteral("lince"), &err));
+    const QJsonObject badGenReq{
+        {QStringLiteral("version"), 2},
+        {QStringLiteral("type"), QStringLiteral("firesystem.prototype.recovery.request")},
+        {QStringLiteral("id"), QStringLiteral("0123456789abcdef0123456789abcdef")},
+        {QStringLiteral("machineId"), QStringLiteral("fedcba9876543210fedcba9876543210")},
+        {QStringLiteral("computerName"), QStringLiteral("host")},
+        {QStringLiteral("generation"), 2147483648.0},
+    };
+    err.clear();
+    QVERIFY(!files.checkRequest(QStringLiteral("recovery"), badGenReq, &err).has_value());
+    QVERIFY(!err.isEmpty());
+
+    // 4. suggestedExportFileUrl returns valid local URL in user-writable directory (not drive root)
+    SettingsService svc(dir.path(), 1000);
+    const QUrl url = svc.suggestedExportFileUrl(QStringLiteral("firesystem-settings.json"));
+    QVERIFY(url.isValid());
+    QVERIFY(url.isLocalFile());
+    const QString localPath = url.toLocalFile();
+    QCOMPARE(QFileInfo(localPath).fileName(), QStringLiteral("firesystem-settings.json"));
+    QVERIFY(QFileInfo(localPath).absolutePath() != QStringLiteral("/"));
 }
 
 QTEST_MAIN(TestSettingsCore)

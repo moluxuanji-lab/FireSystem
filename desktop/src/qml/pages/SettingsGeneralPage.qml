@@ -24,6 +24,53 @@ FluScrollablePage {
         return t("操作员")
     }
 
+    function syncLanguageCombo() {
+        if (!page.service || !page.i18n) {
+            languageCombo.currentIndex = 0
+            return
+        }
+        const opts = page.i18n.languageOptions
+        for (let i = 0; i < opts.length; ++i) {
+            if (opts[i].value === page.service.lang) {
+                languageCombo.currentIndex = i
+                return
+            }
+        }
+        languageCombo.currentIndex = 0
+    }
+
+    function syncThemeCombo() {
+        if (!page.service) {
+            themeCombo.currentIndex = 0
+            return
+        }
+        const opts = themeCombo.themeModel
+        for (let i = 0; i < opts.length; ++i) {
+            if (opts[i].value === page.service.theme) {
+                themeCombo.currentIndex = i
+                return
+            }
+        }
+        themeCombo.currentIndex = 0
+    }
+
+    Component.onCompleted: {
+        syncLanguageCombo()
+        syncThemeCombo()
+    }
+    onServiceChanged: {
+        syncLanguageCombo()
+        syncThemeCombo()
+    }
+
+    Connections {
+        target: page.service
+        function onStateChanged() {
+            page.syncLanguageCombo()
+            page.syncThemeCombo()
+        }
+    }
+
     spacing: 16
     leftPadding: 28
     rightPadding: 28
@@ -58,14 +105,7 @@ FluScrollablePage {
                 model: page.i18n ? page.i18n.languageOptions : []
                 textRole: "label"
                 valueRole: "value"
-                currentIndex: {
-                    if (!page.service || !page.i18n) return 0
-                    const opts = page.i18n.languageOptions
-                    for (let i = 0; i < opts.length; ++i) {
-                        if (opts[i].value === page.service.lang) return i
-                    }
-                    return 0
-                }
+                onModelChanged: page.syncLanguageCombo()
                 onActivated: function(index) {
                     if (page.service && page.i18n) {
                         const opts = page.i18n.languageOptions
@@ -105,13 +145,7 @@ FluScrollablePage {
                 model: themeModel
                 textRole: "label"
                 valueRole: "value"
-                currentIndex: {
-                    if (!page.service) return 0
-                    for (let i = 0; i < themeModel.length; ++i) {
-                        if (themeModel[i].value === page.service.theme) return i
-                    }
-                    return 0
-                }
+                onModelChanged: page.syncThemeCombo()
                 onActivated: function(index) {
                     if (page.service && index >= 0 && index < themeModel.length) {
                         page.service.setTheme(themeModel[index].value)

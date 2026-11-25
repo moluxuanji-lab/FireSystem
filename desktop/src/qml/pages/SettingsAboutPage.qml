@@ -43,21 +43,49 @@ FluScrollablePage {
             Layout.fillWidth: true
             Layout.preferredHeight: 38 + 5 * 42 + 2
             verticalHeaderVisible: false
+
+            Component {
+                id: headerComponentCol
+                FluText {
+                    text: page.t("组件")
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+
+            Component {
+                id: headerVersionCol
+                FluText {
+                    text: page.t("版本 / 标识")
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+
+            Component {
+                id: headerScopeCol
+                FluText {
+                    text: page.t("适用范围")
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+
             columnSource: [
                 {
-                    title: page.t("组件"),
+                    title: compatTable.customItem(headerComponentCol),
                     dataIndex: "component",
                     width: 240,
                     readOnly: true
                 },
                 {
-                    title: page.t("版本 / 标识"),
+                    title: compatTable.customItem(headerVersionCol),
                     dataIndex: "version",
                     width: 240,
                     readOnly: true
                 },
                 {
-                    title: page.t("适用范围"),
+                    title: compatTable.customItem(headerScopeCol),
                     dataIndex: "scope",
                     width: 340,
                     readOnly: true

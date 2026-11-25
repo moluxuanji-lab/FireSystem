@@ -9,6 +9,7 @@
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
+#include <QUrl>
 #include <QVariantList>
 #include <QVariantMap>
 #include <optional>
@@ -162,6 +163,7 @@ public:
     Q_INVOKABLE bool setTheme(const QString &theme);
 
     Q_INVOKABLE QString suggestedExportFileName(const QString &kind) const;
+    Q_INVOKABLE QUrl suggestedExportFileUrl(const QString &fileName) const;
     Q_INVOKABLE int maxUtcYearOffset() const;
     Q_INVOKABLE QString todayUtcIso() const;
 

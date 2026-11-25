@@ -82,6 +82,13 @@ FluScrollablePage {
         deletingId = row.id
     }
 
+    function syncRoleCombo() {
+        editAccountRoleCombo.currentIndex = (page.formRole === "admin") ? 1 : 0
+    }
+
+    Component.onCompleted: syncRoleCombo()
+    onFormRoleChanged: syncRoleCombo()
+
     spacing: 16
     leftPadding: 28
     rightPadding: 28
@@ -350,7 +357,7 @@ FluScrollablePage {
                             model: roleOpts
                             textRole: "label"
                             valueRole: "value"
-                            currentIndex: page.formRole === "admin" ? 1 : 0
+                            onModelChanged: page.syncRoleCombo()
                             onActivated: function(index) {
                                 page.formRole = (index === 1) ? "admin" : "operator"
                             }
@@ -631,7 +638,9 @@ FluScrollablePage {
                     text: page.t("导出请求文件")
                     onClicked: {
                         if (page.service) {
-                            exportRecoveryRequestDialog.currentFile = "file:///" + page.service.suggestedExportFileName("recovery-request")
+                            exportRecoveryRequestDialog.currentFile = page.service.suggestedExportFileUrl(
+                                page.service.suggestedExportFileName("recovery-request")
+                            )
                             exportRecoveryRequestDialog.open()
                         }
                     }
@@ -643,7 +652,9 @@ FluScrollablePage {
                     text: page.t("导出请求文件")
                     onClicked: {
                         if (page.service) {
-                            exportRecoveryRequestDialog.currentFile = "file:///" + page.service.suggestedExportFileName("recovery-request")
+                            exportRecoveryRequestDialog.currentFile = page.service.suggestedExportFileUrl(
+                                page.service.suggestedExportFileName("recovery-request")
+                            )
                             exportRecoveryRequestDialog.open()
                         }
                     }
@@ -726,7 +737,9 @@ FluScrollablePage {
                     disabled: !page.hasRecoveryReqToIssue
                     onClicked: {
                         if (page.service) {
-                            exportIssuedRecoveryDialog.currentFile = "file:///" + page.service.suggestedExportFileName("recovery")
+                            exportIssuedRecoveryDialog.currentFile = page.service.suggestedExportFileUrl(
+                                page.service.suggestedExportFileName("recovery")
+                            )
                             exportIssuedRecoveryDialog.open()
                         }
                     }

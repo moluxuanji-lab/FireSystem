@@ -30,11 +30,17 @@ FluScrollablePage {
         return Qt.formatDate(issueDate, "yyyy-MM-dd")
     }
 
+    function syncIssueModeCombo() {
+        issueModeCombo.currentIndex = (page.issueMode === "date") ? 1 : 0
+    }
+
     Component.onCompleted: {
         const d = new Date()
         d.setFullYear(d.getFullYear() + 1)
         issueDate = d
+        syncIssueModeCombo()
     }
+    onIssueModeChanged: syncIssueModeCombo()
 
     spacing: 16
     leftPadding: 28
@@ -145,7 +151,9 @@ FluScrollablePage {
                     disabled: !page.eligible
                     onClicked: {
                         if (page.service) {
-                            exportLicenseRequestDialog.currentFile = "file:///" + page.service.suggestedExportFileName("license-request")
+                            exportLicenseRequestDialog.currentFile = page.service.suggestedExportFileUrl(
+                                page.service.suggestedExportFileName("license-request")
+                            )
                             exportLicenseRequestDialog.open()
                         }
                     }
@@ -158,7 +166,9 @@ FluScrollablePage {
                     disabled: !page.eligible
                     onClicked: {
                         if (page.service) {
-                            exportLicenseRequestDialog.currentFile = "file:///" + page.service.suggestedExportFileName("license-request")
+                            exportLicenseRequestDialog.currentFile = page.service.suggestedExportFileUrl(
+                                page.service.suggestedExportFileName("license-request")
+                            )
                             exportLicenseRequestDialog.open()
                         }
                     }
@@ -315,7 +325,7 @@ FluScrollablePage {
                     model: modes
                     textRole: "label"
                     valueRole: "value"
-                    currentIndex: page.issueMode === "date" ? 1 : 0
+                    onModelChanged: page.syncIssueModeCombo()
                     onActivated: function(index) {
                         page.issueMode = (index === 1) ? "date" : "years"
                     }
@@ -385,7 +395,9 @@ FluScrollablePage {
                     disabled: !page.hasReqToIssue
                     onClicked: {
                         if (page.service) {
-                            exportIssuedLicenseDialog.currentFile = "file:///" + page.service.suggestedExportFileName("license")
+                            exportIssuedLicenseDialog.currentFile = page.service.suggestedExportFileUrl(
+                                page.service.suggestedExportFileName("license")
+                            )
                             exportIssuedLicenseDialog.open()
                         }
                     }

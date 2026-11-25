@@ -63,6 +63,29 @@ TestCase {
 
         // Activate license as debug -> unlocked
         activateLicenseViaUi(win)
+
+        // Verify header FluDropDownButton displays account id + localized role and has 3 menu items (not 4)
+        const profileDropdown = findChild(win.contentItem, "headerProfileDropdown")
+        verify(profileDropdown !== null && profileDropdown.visible)
+        verify(profileDropdown.text.indexOf("debug") !== -1)
+        verify(profileDropdown.text.indexOf("调试员") !== -1)
+        compare(profileDropdown.contentData.length, 3)
+        let foundMenu = null
+        for (let r = 0; r < profileDropdown.resources.length; ++r) {
+            const res = profileDropdown.resources[r]
+            if (res && res.count !== undefined) {
+                foundMenu = res
+                break
+            }
+        }
+        verify(foundMenu !== null)
+        compare(foundMenu.count, 3)
+
+        svc.setLanguage("en")
+        tryCompare(profileDropdown, "text", "debug · Debugger")
+        svc.setLanguage("zh-CN")
+        tryCompare(profileDropdown, "text", "debug · 调试员")
+
         svc.navigateTo("settings")
         waitForRendering(win.contentItem)
         const navTemplatesUnlocked = findChild(win.contentItem, "navCardTemplates")
@@ -70,9 +93,19 @@ TestCase {
         verify(navTemplatesUnlocked !== null && navTemplatesUnlocked.visible)
         verify(transferCardUnlocked !== null && transferCardUnlocked.visible)
 
-        // Trust catalog visible in About page when unlocked
+        // Trust catalog & About table columnSource stability across language switch
         svc.navigateTo("settings-about")
         waitForRendering(win.contentItem)
+        const compatTable = findChild(win.contentItem, "compatTable")
+        verify(compatTable !== null)
+        const initialColumns = compatTable.columnSource
+        compare(initialColumns.length, 3)
+        svc.setLanguage("en")
+        waitForRendering(win.contentItem)
+        compare(compatTable.columnSource, initialColumns)
+        svc.setLanguage("zh-CN")
+        waitForRendering(win.contentItem)
+        compare(compatTable.columnSource, initialColumns)
         const trustCard = findChild(win.contentItem, "trustCatalogCard")
         const trustBtn = findChild(win.contentItem, "trustDetailBtn")
         const trustBanner = findChild(win.contentItem, "trustDetailBanner")
@@ -128,6 +161,27 @@ TestCase {
         tryCompare(FluTheme, "darkMode", FluThemeType.Light)
         svc.setTheme("system")
         tryCompare(FluTheme, "darkMode", FluThemeType.System)
+
+        // Interactive combo selection followed by programmatic updates must keep currentIndex in sync
+        themeCombo.currentIndex = 2
+        themeCombo.activated(2)
+        compare(svc.theme, "dark")
+        compare(themeCombo.currentIndex, 2)
+        svc.setTheme("light")
+        tryCompare(themeCombo, "currentIndex", 1)
+
+        langCombo.currentIndex = 1 // "en"
+        langCombo.activated(1)
+        compare(svc.lang, "en")
+        compare(langCombo.currentIndex, 1)
+        svc.setLanguage("de") // index 3
+        tryCompare(langCombo, "currentIndex", 3)
+
+        // Switching language while theme is "dark" preserves themeCombo.currentIndex
+        svc.setTheme("dark")
+        tryCompare(themeCombo, "currentIndex", 2)
+        svc.setLanguage("zh-CN")
+        tryCompare(themeCombo, "currentIndex", 2)
     }
 
     function test_accounts_crud_and_templates_review() {
@@ -144,9 +198,18 @@ TestCase {
         addBtn.clicked()
 
         const idInput = findChild(win.contentItem, "editAccountIdInput")
+        const roleCombo = findChild(win.contentItem, "editAccountRoleCombo")
         const pwdInput = findChild(win.contentItem, "editAccountPasswordInput")
         const saveBtn = findChild(win.contentItem, "saveAccountBtn")
-        verify(idInput !== null && pwdInput !== null && saveBtn !== null)
+        verify(idInput !== null && roleCombo !== null && pwdInput !== null && saveBtn !== null)
+
+        // Interact with roleCombo (select admin, then back to operator via programmatic form reset)
+        roleCombo.currentIndex = 1
+        roleCombo.activated(1)
+        compare(roleCombo.currentIndex, 1)
+        addBtn.clicked()
+        tryCompare(roleCombo, "currentIndex", 0)
+
         idInput.text = "ui_op1"
         pwdInput.text = "opsecret"
         saveBtn.clicked()

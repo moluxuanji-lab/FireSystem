@@ -12,6 +12,8 @@
 #include <QSysInfo>
 #include <QTimeZone>
 
+#include <limits>
+
 namespace FireSystem {
 
 OfflineFileManager::OfflineFileManager(QString storageDir, AccountManager *accounts)
@@ -69,7 +71,7 @@ QString OfflineFileManager::computeLicenseEndDate(const QString &mode,
 {
     const QDate todayUtc = QDateTime::currentDateTimeUtc().date();
     if (mode == QLatin1String("years")) {
-        if (years < 1 || todayUtc.year() + years > 9999) {
+        if (years < 1 || years > 9999 - todayUtc.year()) {
             if (errorOut) *errorOut = QStringLiteral("请输入有效的许可年数。");
             return {};
         }
@@ -124,17 +126,40 @@ bool OfflineFileManager::canManage() const
     return actor.has_value() && AccountManager::can(actor->role, QStringLiteral("accounts"));
 }
 
-LicenseStatus OfflineFileManager::licenseStatus() const
+LicenseStatus OfflineFileManager::licenseStatusFromDb(const QJsonObject &db)
 {
-    const QJsonObject db = readDb();
     const QJsonValue licVal = db.value(QStringLiteral("license"));
     if (!licVal.isObject()) {
         return {false, QString()};
     }
     const QJsonObject lic = licVal.toObject();
-    const QString notAfter = lic.value(QStringLiteral("notAfter")).toString();
-    const bool active = notAfter.isEmpty() ? true : isValidExpiry(notAfter);
-    return {active, notAfter};
+    const QJsonValue idVal = lic.value(QStringLiteral("id"));
+    const QJsonValue machineIdVal = lic.value(QStringLiteral("machineId"));
+    const QJsonValue notAfterVal = lic.value(QStringLiteral("notAfter"));
+    if (!idVal.isString() || !machineIdVal.isString() || !notAfterVal.isString()) {
+        return {false, QString()};
+    }
+    const QString id = idVal.toString();
+    const QString machineId = machineIdVal.toString();
+    const QString notAfter = notAfterVal.toString();
+    if (!isValidId(id) || !isValidId(machineId) || notAfter.isEmpty()) {
+        return {false, QString()};
+    }
+    const QString dbMachineId = db.value(QStringLiteral("machineId")).toString();
+    if (!dbMachineId.isEmpty() && machineId != dbMachineId) {
+        return {false, QString()};
+    }
+    if (!isValidExpiry(notAfter)) {
+        static const QRegularExpression dateRe(QStringLiteral("^\\d{4}-\\d{2}-\\d{2}$"));
+        const bool isIsoDate = dateRe.match(notAfter).hasMatch() && QDate::fromString(notAfter, Qt::ISODate).isValid();
+        return {false, isIsoDate ? notAfter : QString()};
+    }
+    return {true, notAfter};
+}
+
+LicenseStatus OfflineFileManager::licenseStatus() const
+{
+    return licenseStatusFromDb(readDb());
 }
 
 bool OfflineFileManager::mayApply(const QString &kind, const QJsonObject &db) const
@@ -142,13 +167,7 @@ bool OfflineFileManager::mayApply(const QString &kind, const QJsonObject &db) co
     if (kind == QLatin1String("recovery")) {
         return m_accounts && m_accounts->canRecover();
     }
-    const QJsonValue licVal = db.value(QStringLiteral("license"));
-    bool active = false;
-    if (licVal.isObject()) {
-        const QString notAfter = licVal.toObject().value(QStringLiteral("notAfter")).toString();
-        active = notAfter.isEmpty() ? true : isValidExpiry(notAfter);
-    }
-    return canManage() || !active;
+    return canManage() || !licenseStatusFromDb(db).licensed;
 }
 
 std::optional<QJsonObject> OfflineFileManager::localRequestFromDb(const QString &kind, const QJsonObject &db) const
@@ -261,8 +280,19 @@ std::optional<QJsonObject> OfflineFileManager::checkRequest(const QString &kind,
     if (kind == QLatin1String("recovery")) {
         const QJsonValue genVal = fileObj.value(QStringLiteral("generation"));
         const double d = genVal.toDouble(-1.0);
-        generation = static_cast<int>(d);
-        validGen = genVal.isDouble() && d >= 1.0 && d == static_cast<double>(generation);
+        if (genVal.isDouble()
+            && d >= 1.0
+            && d <= static_cast<double>(std::numeric_limits<int>::max())) {
+            const int candidate = static_cast<int>(d);
+            if (d == static_cast<double>(candidate)) {
+                generation = candidate;
+                validGen = true;
+            } else {
+                validGen = false;
+            }
+        } else {
+            validGen = false;
+        }
     }
     if (!isValidId(id) || !isValidId(machineId) || !validName || !validGen) {
         if (errorOut) *errorOut = QStringLiteral("请求文件内容不完整或已损坏。");

@@ -88,7 +88,9 @@ FluScrollablePage {
                 text: page.t("导出评审清单")
                 onClicked: {
                     if (page.service) {
-                        exportManifestDialog.currentFile = "file:///" + page.service.suggestedExportFileName("template-review")
+                        exportManifestDialog.currentFile = page.service.suggestedExportFileUrl(
+                            page.service.suggestedExportFileName("template-review")
+                        )
                         exportManifestDialog.open()
                     }
                 }

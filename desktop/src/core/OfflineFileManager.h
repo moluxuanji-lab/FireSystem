@@ -58,6 +58,7 @@ private:
     QJsonObject readDb() const;
     bool writeDb(const QJsonObject &db, QString *errorOut = nullptr) const;
     bool canManage() const;
+    static LicenseStatus licenseStatusFromDb(const QJsonObject &db);
     bool mayApply(const QString &kind, const QJsonObject &db) const;
     std::optional<QJsonObject> localRequestFromDb(const QString &kind, const QJsonObject &db) const;
     static QString expectedType(const QString &kind, bool isRequest, QString *errorOut = nullptr);

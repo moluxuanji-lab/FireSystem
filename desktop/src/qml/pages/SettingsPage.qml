@@ -142,7 +142,9 @@ FluScrollablePage {
                 text: page.t("导出设置")
                 onClicked: {
                     if (page.service) {
-                        exportSettingsDialog.currentFile = "file:///" + page.service.suggestedExportFileName("settings")
+                        exportSettingsDialog.currentFile = page.service.suggestedExportFileUrl(
+                            page.service.suggestedExportFileName("settings")
+                        )
                         exportSettingsDialog.open()
                     }
                 }
