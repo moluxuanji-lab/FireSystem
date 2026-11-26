@@ -37,7 +37,7 @@ jobs:
           repo_name="$(basename "$GITHUB_REPOSITORY")"
           source_url="https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git"
           # Gitee organization mirror namespace; repository slugs are lowercase.
-          target_repo="${repo_name,,}"
+          target_repo="$repo_name"
           target_url="https://oauth2:$GITEE_TOKEN@gitee.com/moluxuanji-lab/$target_repo.git"
 
           git clone --mirror "$source_url" source.git
